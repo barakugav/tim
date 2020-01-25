@@ -13,20 +13,20 @@ public final class ID {
     private final byte[] data;
     private transient int hash;
 
-    private static final String NULL_TABLENAME = "__NONAME__";
     public static final ID NULLID;
 
     private static final Random rand = new Random();
     private static final int DATA_LENGTH = 16;
+    private static final String SEPARATOR = ";";
 
     static {
 	byte[] nullIDValue = new byte[DATA_LENGTH];
 	Arrays.fill(nullIDValue, (byte) 0);
-	NULLID = new ID(null, nullIDValue);
+	NULLID = new ID("NoName", nullIDValue);
     }
 
     private ID(String tableName, byte[] data) {
-	this.tableName = tableName;
+	this.tableName = Objects.requireNonNull(tableName);
 	this.data = data.clone();
 	computeHashCode();
     }
@@ -49,7 +49,7 @@ public final class ID {
 
     @Override
     public String toString() {
-	return (tableName != null ? tableName : NULL_TABLENAME) + bytesToHexString(data);
+	return tableName + SEPARATOR + bytesToHexString(data);
     }
 
     String getTableName() {
@@ -72,14 +72,13 @@ public final class ID {
     }
 
     public static ID valueOf(String s) throws ParseException {
-	String[] st = s.split(";");
+	String[] st = s.split(SEPARATOR);
 	if (st.length != 2)
 	    throw new ParseException(s, 0);
-	String tableName = NULL_TABLENAME.equals(st[0]) ? null : st[0];
-	return valueOf(tableName, hexStringToBytes(st[1]));
+	return valueOf(st[0], hexStringToBytes(st[1]));
     }
 
-    public static ID valueOf(String tableName, byte[] bytes) {
+    private static ID valueOf(String tableName, byte[] bytes) {
 	if (bytes.length != DATA_LENGTH)
 	    throw new IllegalArgumentException("invalid bytes length");
 	return new ID(tableName, bytes);
