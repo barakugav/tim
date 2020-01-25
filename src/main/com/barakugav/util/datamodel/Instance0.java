@@ -1,10 +1,10 @@
 package com.barakugav.util.datamodel;
 
-interface Instance0 extends Instance {
+interface Instance0 extends Atom0, Instance {
 
     @Override
     Template0 getTemplate();
 
-    void setTemplate(Template0 template);
+    boolean setTemplate(Template0 template);
 
 }

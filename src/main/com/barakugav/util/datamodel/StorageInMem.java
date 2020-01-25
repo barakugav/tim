@@ -3,15 +3,18 @@ package com.barakugav.util.datamodel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 
 abstract class StorageInMem implements Storage {
 
     private final Map<String, Table> tables;
+    private ModelLogger logger;
 
     StorageInMem() {
 	tables = new HashMap<>();
+	logger = new ModelLoggerDefault();
     }
 
     @Override
@@ -73,6 +76,8 @@ abstract class StorageInMem implements Storage {
 	result = new POJOTemplate(id);
 	// Mem/Cache level
 	result = new InMemTemplate(result);
+	// Logging level
+	result = new LoggerTemplate(result, logger);
 
 	return result;
     }
@@ -84,7 +89,20 @@ abstract class StorageInMem implements Storage {
 	result = new POJOInstance(id);
 	// Mem/Cache level
 	result = new InMemInstance(result);
+	// Logging level
+	result = new LoggerInstance(result, logger);
 
+	return result;
+    }
+
+    @Override
+    public Collection<ID> getChangedAtoms(long begin, long end) {
+	if (logger == null)
+	    throw new UnsupportedOperationException();
+	Iterator<ModelLog> logs = logger.getLogs(begin, end);
+	Collection<ID> result = new HashSet<>();
+	for (; logs.hasNext();)
+	    result.add(logs.next().getSource());
 	return result;
     }
 
@@ -147,50 +165,45 @@ abstract class StorageInMem implements Storage {
 
     }
 
-    private class InMemTemplate extends ViewTemplate {
+    private class InMemAtom extends ViewAtomAbstract {
 
-	private final Template0 template;
-
-	InMemTemplate(Template0 template) {
-	    this.template = Objects.requireNonNull(template);
+	InMemAtom(Atom0 atom) {
+	    super(atom);
 	    addToMem(this);
 	}
 
 	@Override
 	public boolean delete() {
-	    if (!super.delete())
+	    if (!atom().delete())
 		return false;
 	    removeFromMem(this);
 	    return true;
-	}
-
-	@Override
-	Template0 atom() {
-	    return template;
 	}
 
     }
 
-    private class InMemInstance extends ViewInstance {
+    private class InMemTemplate extends InMemAtom implements ViewTemplate {
 
-	private final Instance0 instance;
+	InMemTemplate(Template0 template) {
+	    super(template);
+	}
+
+	@Override
+	public Template0 atom() {
+	    return (Template0) super.atom();
+	}
+
+    }
+
+    private class InMemInstance extends InMemAtom implements ViewInstance {
 
 	InMemInstance(Instance0 instance) {
-	    this.instance = Objects.requireNonNull(instance);
-	    addToMem(this);
+	    super(instance);
 	}
 
 	@Override
-	public boolean delete() {
-	    if (!super.delete())
-		return false;
-	    removeFromMem(this);
-	    return true;
-	}
-
-	@Override
-	Instance0 atom() {
-	    return instance;
+	public Instance0 atom() {
+	    return (Instance0) super.atom();
 	}
 
     }

@@ -35,8 +35,8 @@ public class POJOInstance extends POJOAtom implements Instance0 {
     }
 
     @Override
-    public void setTemplate(Template0 template) {
-	setTemplate0(template);
+    public boolean setTemplate(Template0 template) {
+	return setTemplate0(template);
     }
 
     private boolean setTemplate0(Template template) {

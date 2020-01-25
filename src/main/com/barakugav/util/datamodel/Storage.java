@@ -18,6 +18,8 @@ interface Storage {
 
     Instance newInstance(Template template);
 
+    Collection<ID> getChangedAtoms(long begin, long end);
+
     void open();
 
     void close();
