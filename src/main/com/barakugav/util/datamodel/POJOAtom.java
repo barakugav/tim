@@ -5,22 +5,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-abstract class AtomImpl implements Atom {
+public class POJOAtom implements Atom0 {
 
-    private final Model model;
     private final ID id;
     private final Map<String, Object> properties;
+    private boolean isAlive;
 
-    AtomImpl(Model model) {
-	this(model, null, null);
-    }
-
-    AtomImpl(Model model, ID id, Map<String, Object> properties) {
-	this.model = Objects.requireNonNull(model);
-	this.id = id != null ? id : ID.newID();
-	this.properties = properties != null ? new HashMap<>(properties) : new HashMap<>();
-
-	this.model.addAtom(this);
+    POJOAtom(ID id) {
+	this.id = Objects.requireNonNull(id);
+	this.properties = new HashMap<>();
+	isAlive = true;
     }
 
     @Override
@@ -68,12 +62,15 @@ abstract class AtomImpl implements Atom {
 
     @Override
     public boolean delete() {
-	return model.removeAtom(this);
+	if (!isAlive)
+	    return false;
+	isAlive = false;
+	return true;
     }
 
     @Override
     public boolean isAlive() {
-	return model.getAtom(getID()) == this;
+	return isAlive;
     }
 
     @Override
@@ -95,10 +92,6 @@ abstract class AtomImpl implements Atom {
     @Override
     public int hashCode() {
 	return id.hashCode();
-    }
-
-    Model getModel() {
-	return model;
     }
 
 }

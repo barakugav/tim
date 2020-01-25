@@ -2,17 +2,12 @@ package com.barakugav.util.datamodel;
 
 import java.util.Map;
 
-class InstanceImpl extends AtomImpl implements Instance {
+public class POJOInstance extends POJOAtom implements Instance0 {
 
     private static final String PROPERTY_TEMPLATE = ".Template";
 
-    InstanceImpl(Model model, Template template) {
-	super(model);
-	setTemplate(template);
-    }
-
-    InstanceImpl(Model model, ID id, Map<String, Object> properties) {
-	super(model, id, properties);
+    POJOInstance(ID id) {
+	super(id);
     }
 
     @Override
@@ -35,16 +30,17 @@ class InstanceImpl extends AtomImpl implements Instance {
     }
 
     @Override
-    public Template getTemplate() {
-	return (Template) getModel().getAtom(template());
-    }
-
-    private ID template() {
+    public Template0 getTemplate() {
 	return getProperty(PROPERTY_TEMPLATE);
     }
 
-    private boolean setTemplate(Template template) {
-	return setProperty(PROPERTY_TEMPLATE, template.getID());
+    @Override
+    public void setTemplate(Template0 template) {
+	setTemplate0(template);
+    }
+
+    private boolean setTemplate0(Template template) {
+	return setProperty(PROPERTY_TEMPLATE, template);
     }
 
 }

@@ -2,7 +2,6 @@ package com.barakugav.util.datamodel;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
@@ -33,7 +32,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-class StorageXML implements Storage {
+class StorageXML extends StorageInMem {
 
     private final String path;
 
@@ -41,10 +40,12 @@ class StorageXML implements Storage {
     private static final String TEMPLATES_FOLDER_TAG = "TemplatesFolder";
     private static final String INSTANCES_FOLDER_TAG = "InstancesFolder";
 
+    private static final String TABLE_TAG = "Table";
     private static final String TEMPLATE_TAG = "Template";
     private static final String INSTANCE_TAG = "Instance";
 
     private static final String ID_TAG = "ID";
+    private static final String NAME_TAG = "Name";
     private static final String PROPERTIES_TAG = "Properties";
     private static final String PROPERTY_TAG = "Propery";
     private static final String KEY_TAG = "Key";
@@ -64,25 +65,36 @@ class StorageXML implements Storage {
     }
 
     @Override
-    public void read(Model model) {
+    public void open() {
+	super.open();
 	try {
-	    read(model, path);
+	    read(path);
 	} catch (Exception e) {
 	    throw new RuntimeException(e);
 	}
     }
 
     @Override
-    public void write(Model model) {
+    public void close() {
+	List<Exception> ex = new ArrayList<>(0);
 	try {
-	    write(model, path);
+	    write(path);
 	} catch (ParserConfigurationException | TransformerException e) {
-	    throw new UncheckedIOException(new IOException(e));
+	    ex.add(e);
+	}
+	try {
+	    super.close();
+	} catch (Exception e) {
+	    ex.add(e);
+	}
+	if (!ex.isEmpty()) {
+	    for (Exception e : ex)
+		e.printStackTrace();
+	    throw new RuntimeException(ex.get(0));
 	}
     }
 
-    private static void read(Model model, String filePath)
-	    throws SAXException, IOException, ParserConfigurationException, ParseException {
+    private void read(String filePath) throws SAXException, IOException, ParserConfigurationException, ParseException {
 	File file = new File(filePath);
 	if (!file.exists())
 	    return;
@@ -91,21 +103,19 @@ class StorageXML implements Storage {
 	Document doc = dBuilder.parse(file);
 
 	Element root = getChildByTag(doc, ROOT_TAG);
-	Element templatesFolderElm = getChildByTag(root, TEMPLATES_FOLDER_TAG);
-	Element instancesFolderElm = getChildByTag(root, INSTANCES_FOLDER_TAG);
-	readTemplatesFolder(model, templatesFolderElm);
-	readInstancesFolder(model, instancesFolderElm);
+	for (Element tableElm : getChildrenByTag(root, TABLE_TAG))
+	    readTable(tableElm);
     }
 
-    private static void write(Model model, String filePath) throws ParserConfigurationException, TransformerException {
+    private void write(String filePath) throws ParserConfigurationException, TransformerException {
 	DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	DocumentBuilder builder = factory.newDocumentBuilder();
 	Document doc = builder.newDocument();
 
 	Element rootElm = doc.createElement(ROOT_TAG);
 
-	writeTemplatesFolder(model, rootElm);
-	writeInstancesFolder(model, rootElm);
+	for (String tableName : tableNames())
+	    writeTable(rootElm, tableName);
 
 	doc.appendChild(rootElm);
 
@@ -120,34 +130,47 @@ class StorageXML implements Storage {
 	// TODO - compact xml tags
     }
 
-    private static void writeTemplatesFolder(Model model, Element parent) {
+    private void writeTable(Element parent, String tableName) {
+	Element tableElm = parent.getOwnerDocument().createElement(TABLE_TAG);
+	tableElm.setAttribute(NAME_TAG, writeValue(tableName));
+	writeTemplatesFolder(tableElm, getTemplates(tableName));
+	writeInstancesFolder(tableElm, getInstances(tableName));
+	parent.appendChild(tableElm);
+    }
+
+    private void readTable(Element tableElm) throws ParseException {
+	Element templatesFolderElm = getChildByTag(tableElm, TEMPLATES_FOLDER_TAG);
+	Element instancesFolderElm = getChildByTag(tableElm, INSTANCES_FOLDER_TAG);
+	readTemplatesFolder(templatesFolderElm);
+	readInstancesFolder(instancesFolderElm);
+    }
+
+    private static void writeTemplatesFolder(Element parent, Collection<Template> templates) {
 	Element templatesFolderElm = parent.getOwnerDocument().createElement(TEMPLATES_FOLDER_TAG);
 
-	for (Template template : model.templates())
+	for (Template template : templates)
 	    writeTemplate(templatesFolderElm, template);
 
 	parent.appendChild(templatesFolderElm);
     }
 
-    private static void writeInstancesFolder(Model model, Element parent) {
+    private static void writeInstancesFolder(Element parent, Collection<Instance> instances) {
 	Element instancesFolder = parent.getOwnerDocument().createElement(INSTANCES_FOLDER_TAG);
 
-	for (Instance instance : model.instances())
+	for (Instance instance : instances)
 	    writeInstance(instancesFolder, instance);
 
 	parent.appendChild(instancesFolder);
     }
 
-    private static void readTemplatesFolder(Model model, Element templatesFolderElm) throws ParseException {
-	for (Element templateElm : getChildrenByTag(templatesFolderElm, TEMPLATE_TAG)) {
-	    readTemplate(model, templateElm);
-	}
+    private void readTemplatesFolder(Element templatesFolderElm) throws ParseException {
+	for (Element templateElm : getChildrenByTag(templatesFolderElm, TEMPLATE_TAG))
+	    readTemplate(templateElm);
     }
 
-    private static void readInstancesFolder(Model model, Element instancesFolderElm) throws ParseException {
-	for (Element instanceElm : getChildrenByTag(instancesFolderElm, INSTANCE_TAG)) {
-	    readInstance(model, instanceElm);
-	}
+    private void readInstancesFolder(Element instancesFolderElm) throws ParseException {
+	for (Element instanceElm : getChildrenByTag(instancesFolderElm, INSTANCE_TAG))
+	    readInstance(instanceElm);
     }
 
     private static void writeTemplate(Element parent, Template template) {
@@ -164,16 +187,18 @@ class StorageXML implements Storage {
 	parent.appendChild(instanceElm);
     }
 
-    private static Template readTemplate(Model model, Element templateElm) throws ParseException {
+    private void readTemplate(Element templateElm) throws ParseException {
 	ID id = readID(templateElm);
 	Map<String, Object> properties = readProperties(templateElm);
-	return new TemplateImpl(model, id, properties);
+	Template0 template = newEmptyTemplate(id);
+	template.setProperties(properties);
     }
 
-    private static Instance readInstance(Model model, Element templateElm) throws ParseException {
+    private void readInstance(Element templateElm) throws ParseException {
 	ID id = readID(templateElm);
 	Map<String, Object> properties = readProperties(templateElm);
-	return new InstanceImpl(model, id, properties);
+	Instance0 instance = newEmptyInstance(id);
+	instance.setProperties(properties);
     }
 
     private static void writeID(Atom atom, Element atomElm) {
@@ -774,7 +799,7 @@ class StorageXML implements Storage {
 	Map<String, Object> properties = new HashMap<>();
 	for (Element propertyElm : getChildrenByTag(propertiesElm, PROPERTY_TAG)) {
 	    String key = readValue(propertyElm.getAttribute(KEY_TAG));
-	    String value = readValue(propertyElm.getAttribute(VALUE_TAG));
+	    Object value = readData(propertyElm);
 	    if (key != null && !key.isBlank())
 		properties.put(key, value);
 	}
@@ -783,6 +808,10 @@ class StorageXML implements Storage {
 
     private static String readValue(String value) {
 	return NO_VALUE.equals(value) ? null : value;
+    }
+
+    private static Object readData(Element dataElm) {
+	return DataType.readDataType(dataElm).readData(dataElm);
     }
 
     private static String writeValue(Object value) {

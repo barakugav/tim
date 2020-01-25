@@ -10,8 +10,6 @@ public interface Template extends Atom {
     @Override
     public boolean delete();
 
-    public Instance newInstance();
-
     public Collection<Instance> getInstances();
-    
+
 }

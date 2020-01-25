@@ -1,9 +1,25 @@
 package com.barakugav.util.datamodel;
 
+import java.util.Collection;
+
 interface Storage {
 
-    void write(Model model);
+    Collection<String> tableNames();
 
-    void read(Model model);
+    Collection<Template> getTemplates(String tableName);
+
+    Collection<Instance> getInstances(String tableName);
+
+    Template getTemplate(ID id);
+
+    Instance getIntance(ID id);
+
+    Template newTemplate(String tableName);
+
+    Instance newInstance(Template template);
+
+    void open();
+
+    void close();
 
 }

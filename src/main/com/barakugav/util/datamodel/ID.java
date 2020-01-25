@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 
 public final class ID {
 
+    private final String tableName;
     private final byte[] data;
     private transient int hash;
 
+    private static final String NULL_TABLENAME = "__NONAME__";
     public static final ID NULLID;
 
     private static final Random rand = new Random();
@@ -19,12 +22,13 @@ public final class ID {
     static {
 	byte[] nullIDValue = new byte[DATA_LENGTH];
 	Arrays.fill(nullIDValue, (byte) 0);
-	NULLID = new ID(nullIDValue);
+	NULLID = new ID(null, nullIDValue);
     }
 
-    private ID(byte[] data) {
+    private ID(String tableName, byte[] data) {
+	this.tableName = tableName;
 	this.data = data.clone();
-	hash = Arrays.hashCode(this.data);
+	computeHashCode();
     }
 
     @Override
@@ -35,7 +39,7 @@ public final class ID {
 	    return false;
 
 	ID o = (ID) other;
-	return o.hash == hash && Arrays.equals(o.data, data);
+	return o.hash == hash && Arrays.equals(o.data, data) && Objects.equals(o.tableName, tableName);
     }
 
     @Override
@@ -45,28 +49,40 @@ public final class ID {
 
     @Override
     public String toString() {
-	return bytesToHexString(data);
+	return (tableName != null ? tableName : NULL_TABLENAME) + bytesToHexString(data);
+    }
+
+    String getTableName() {
+	return tableName;
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
 	in.defaultReadObject();
-	hash = Arrays.hashCode(data);
+	computeHashCode();
     }
 
-    public static ID newID() {
+    private void computeHashCode() {
+	hash = Arrays.hashCode(data) ^ Objects.hashCode(tableName);
+    }
+
+    public static ID newID(String tableName) {
 	byte[] b = new byte[DATA_LENGTH];
 	rand.nextBytes(b);
-	return new ID(b);
+	return new ID(tableName, b);
     }
 
     public static ID valueOf(String s) throws ParseException {
-	return valueOf(hexStringToBytes(s));
+	String[] st = s.split(";");
+	if (st.length != 2)
+	    throw new ParseException(s, 0);
+	String tableName = NULL_TABLENAME.equals(st[0]) ? null : st[0];
+	return valueOf(tableName, hexStringToBytes(st[1]));
     }
 
-    public static ID valueOf(byte[] bytes) {
+    public static ID valueOf(String tableName, byte[] bytes) {
 	if (bytes.length != DATA_LENGTH)
 	    throw new IllegalArgumentException("invalid bytes length");
-	return new ID(bytes.clone());
+	return new ID(tableName, bytes);
     }
 
     private static String bytesToHexString(byte[] bytes) {
