@@ -13,15 +13,25 @@ import java.util.function.Predicate;
 abstract class DataModelInMem implements DataModel {
 
     private final Map<String, Table> tables;
+
     private final ModelLogger logger;
     private final EventManager eventManager;
+
+    private final AtomConstructor atomConstructor;
+    private final AtomLayer atomLayerLogger;
+    private final AtomLayer atomLayerEvents;
 
     private boolean isOpen;
 
     DataModelInMem() {
 	tables = new HashMap<>();
+
 	logger = new ModelLoggerDefault();
 	eventManager = new EventManager();
+
+	atomConstructor = new AtomConstructorPOJO();
+	atomLayerLogger = new AtomLayerLogger(logger);
+	atomLayerEvents = new AtomLayerEvents(eventManager);
 
 	isOpen = false;
     }
@@ -114,11 +124,11 @@ abstract class DataModelInMem implements DataModel {
 	Template0 template;
 
 	// POJO level
-	template = new POJOTemplate(id);
+	template = atomConstructor.newTemplate(id);
 	// Logging level
-	template = new LoggerTemplate(template, logger);
+	template = atomLayerLogger.layer(template);
 	// Evented level
-	template = new EventedTemplate(template, eventManager);
+	template = atomLayerEvents.layer(template);
 	// Mem/Cache level (Must be the last)
 	template = new InMemTemplate(template);
 
@@ -129,11 +139,11 @@ abstract class DataModelInMem implements DataModel {
 	Instance0 instance;
 
 	// POJO level
-	instance = new POJOInstance(id);
+	instance = atomConstructor.newInstance(id);
 	// Logging level
-	instance = new LoggerInstance(instance, logger);
+	instance = atomLayerLogger.layer(instance);
 	// Evented level
-	instance = new EventedInstance(instance, eventManager);
+	instance = atomLayerEvents.layer(instance);
 	// Mem/Cache level (Must be the last)
 	instance = new InMemInstance(instance);
 
@@ -211,11 +221,6 @@ abstract class DataModelInMem implements DataModel {
 
 	isOpen = false;
 	return true;
-    }
-
-    boolean isInMemory(ID id) {
-	Table table = tables.get(id.getTableName());
-	return table.templates.containsKey(id) || table.instances.containsKey(id);
     }
 
     private void addToMem(Atom0 atom) {
