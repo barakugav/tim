@@ -31,8 +31,13 @@ abstract class DataModelInMem implements DataModel {
 	return Collections.unmodifiableSet(tables.keySet());
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Collection<Template> getTemplates(String tableName) {
+	return (Collection) getTemplates0(tableName);
+    }
+
+    Collection<Template0> getTemplates0(String tableName) {
 	Table table = tables.get(tableName);
 	if (table == null)
 	    return Collections.emptySet();
@@ -48,12 +53,17 @@ abstract class DataModelInMem implements DataModel {
 	return result;
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Collection<Instance> getInstances(String tableName) {
+	return (Collection) getInstances0(tableName);
+    }
+
+    Collection<Instance0> getInstances0(String tableName) {
 	Table table = tables.get(tableName);
 	if (table == null)
 	    return Collections.emptySet();
-	return Collections.unmodifiableCollection(table.instance.values());
+	return Collections.unmodifiableCollection(table.instances.values());
     }
 
     @Override
@@ -66,7 +76,7 @@ abstract class DataModelInMem implements DataModel {
     }
 
     @Override
-    public Template getTemplate(ID id) {
+    public Template0 getTemplate(ID id) {
 	Table table = tables.get(id.getTableName());
 	if (table == null)
 	    return null;
@@ -74,11 +84,11 @@ abstract class DataModelInMem implements DataModel {
     }
 
     @Override
-    public Instance getIntance(ID id) {
+    public Instance0 getIntance(ID id) {
 	Table table = tables.get(id.getTableName());
 	if (table == null)
 	    return null;
-	return table.instance.get(id);
+	return table.instances.get(id);
     }
 
     @Override
@@ -95,11 +105,12 @@ abstract class DataModelInMem implements DataModel {
 	ID id = ID.newID(tableName);
 	Instance0 instance = newEmptyInstance(id);
 	instance.setTemplate((Template0) template);
+	((Template0) template).addInstance(instance);
 	eventManager.fireInstanceCreated(new TableEvent(id));
 	return instance;
     }
 
-    Template0 newEmptyTemplate(ID id) {
+    private Template0 newEmptyTemplate(ID id) {
 	Template0 template;
 
 	// POJO level
@@ -108,13 +119,13 @@ abstract class DataModelInMem implements DataModel {
 	template = new LoggerTemplate(template, logger);
 	// Evented level
 	template = new EventedTemplate(template, eventManager);
-	// Mem/Cache level
+	// Mem/Cache level (Must be the last)
 	template = new InMemTemplate(template);
 
 	return template;
     }
 
-    Instance0 newEmptyInstance(ID id) {
+    private Instance0 newEmptyInstance(ID id) {
 	Instance0 instance;
 
 	// POJO level
@@ -123,9 +134,23 @@ abstract class DataModelInMem implements DataModel {
 	instance = new LoggerInstance(instance, logger);
 	// Evented level
 	instance = new EventedInstance(instance, eventManager);
-	// Mem/Cache level
+	// Mem/Cache level (Must be the last)
 	instance = new InMemInstance(instance);
 
+	return instance;
+    }
+
+    Template0 getOrCreateEmptyTemplate(ID id) {
+	Template0 template = getTemplate(id);
+	if (template == null)
+	    template = newEmptyTemplate(id);
+	return template;
+    }
+
+    Instance0 getOrCreateEmptyInstance(ID id) {
+	Instance0 instance = getIntance(id);
+	if (instance == null)
+	    instance = newEmptyInstance(id);
 	return instance;
     }
 
@@ -180,7 +205,7 @@ abstract class DataModelInMem implements DataModel {
 
 	for (Table table : tables.values()) {
 	    table.templates.clear();
-	    table.instance.clear();
+	    table.instances.clear();
 	}
 	tables.clear();
 
@@ -190,18 +215,18 @@ abstract class DataModelInMem implements DataModel {
 
     boolean isInMemory(ID id) {
 	Table table = tables.get(id.getTableName());
-	return table.templates.containsKey(id) || table.instance.containsKey(id);
+	return table.templates.containsKey(id) || table.instances.containsKey(id);
     }
 
-    private void addToMem(Atom atom) {
+    private void addToMem(Atom0 atom) {
 	ID id = atom.getID();
 	String tableName = id.getTableName();
 	Table table = tables.computeIfAbsent(tableName, n -> new Table());
 	Atom previous = null;
-	if (atom instanceof Template)
-	    previous = table.templates.put(id, (Template) atom);
-	else if (atom instanceof Instance)
-	    previous = table.instance.put(id, (Instance) atom);
+	if (atom instanceof Template0)
+	    previous = table.templates.put(id, (Template0) atom);
+	else if (atom instanceof Instance0)
+	    previous = table.instances.put(id, (Instance0) atom);
 	else
 	    throw new IllegalArgumentException("Unkown atom type: " + atom.getClass());
 	if (previous != null)
@@ -217,18 +242,18 @@ abstract class DataModelInMem implements DataModel {
 	if (atom instanceof Template)
 	    return table.templates.remove(id, atom);
 	if (atom instanceof Instance)
-	    return table.instance.remove(id, atom);
+	    return table.instances.remove(id, atom);
 	throw new IllegalArgumentException("Unkown atom type: " + atom.getClass());
     }
 
     private static class Table {
 
-	final Map<ID, Template> templates;
-	final Map<ID, Instance> instance;
+	final Map<ID, Template0> templates;
+	final Map<ID, Instance0> instances;
 
 	Table() {
 	    templates = new HashMap<>();
-	    instance = new HashMap<>();
+	    instances = new HashMap<>();
 	}
 
     }

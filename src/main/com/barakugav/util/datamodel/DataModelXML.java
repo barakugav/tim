@@ -44,6 +44,11 @@ class DataModelXML extends DataModelInMem {
     private static final String TEMPLATE_TAG = "Template";
     private static final String INSTANCE_TAG = "Instance";
 
+    private static final String ID_REF_TAG = "IDRef";
+    private static final String TEMPLATE_REF_TAG = "TemplateRef";
+    private static final String INSTANCE_REFS_TAG = "InstanceRefs";
+    private static final String INSTANCE_REF_TAG = "InstanceRef";
+
     private static final String ID_TAG = "ID";
     private static final String NAME_TAG = "Name";
     private static final String PROPERTIES_TAG = "Properties";
@@ -138,8 +143,8 @@ class DataModelXML extends DataModelInMem {
     private void writeTable(Element parent, String tableName) {
 	Element tableElm = parent.getOwnerDocument().createElement(TABLE_TAG);
 	tableElm.setAttribute(NAME_TAG, writeValue(tableName));
-	writeTemplatesFolder(tableElm, getTemplates(tableName));
-	writeInstancesFolder(tableElm, getInstances(tableName));
+	writeTemplatesFolder(tableElm, getTemplates0(tableName));
+	writeInstancesFolder(tableElm, getInstances0(tableName));
 	parent.appendChild(tableElm);
     }
 
@@ -150,19 +155,19 @@ class DataModelXML extends DataModelInMem {
 	readInstancesFolder(instancesFolderElm);
     }
 
-    private static void writeTemplatesFolder(Element parent, Collection<Template> templates) {
+    private static void writeTemplatesFolder(Element parent, Collection<Template0> templates) {
 	Element templatesFolderElm = parent.getOwnerDocument().createElement(TEMPLATES_FOLDER_TAG);
 
-	for (Template template : templates)
+	for (Template0 template : templates)
 	    writeTemplate(templatesFolderElm, template);
 
 	parent.appendChild(templatesFolderElm);
     }
 
-    private static void writeInstancesFolder(Element parent, Collection<Instance> instances) {
+    private static void writeInstancesFolder(Element parent, Collection<Instance0> instances) {
 	Element instancesFolder = parent.getOwnerDocument().createElement(INSTANCES_FOLDER_TAG);
 
-	for (Instance instance : instances)
+	for (Instance0 instance : instances)
 	    writeInstance(instancesFolder, instance);
 
 	parent.appendChild(instancesFolder);
@@ -178,10 +183,11 @@ class DataModelXML extends DataModelInMem {
 	    readInstance(instanceElm);
     }
 
-    private static void writeTemplate(Element parent, Template template) {
+    private static void writeTemplate(Element parent, Template0 template) {
 	Element templateElm = parent.getOwnerDocument().createElement(TEMPLATE_TAG);
 	writeID(template, templateElm);
 	writeProperties(template, templateElm);
+	writeTemplateInstances(template, templateElm);
 	parent.appendChild(templateElm);
     }
 
@@ -189,21 +195,24 @@ class DataModelXML extends DataModelInMem {
 	Element instanceElm = parent.getOwnerDocument().createElement(INSTANCE_TAG);
 	writeID(instance, instanceElm);
 	writeProperties(instance, instanceElm);
+	writeInstanceTemplate(instance, instanceElm);
 	parent.appendChild(instanceElm);
     }
 
     private void readTemplate(Element templateElm) throws ParseException {
 	ID id = readID(templateElm);
 	Map<String, Object> properties = readProperties(templateElm);
-	Template0 template = newEmptyTemplate(id);
+	Template0 template = getOrCreateEmptyTemplate(id);
 	template.setProperties(properties);
+	template.setInstances(readTemplateInstances(templateElm));
     }
 
-    private void readInstance(Element templateElm) throws ParseException {
-	ID id = readID(templateElm);
-	Map<String, Object> properties = readProperties(templateElm);
-	Instance0 instance = newEmptyInstance(id);
+    private void readInstance(Element instanceElm) throws ParseException {
+	ID id = readID(instanceElm);
+	Map<String, Object> properties = readProperties(instanceElm);
+	Instance0 instance = getOrCreateEmptyInstance(id);
 	instance.setProperties(properties);
+	instance.setTemplate(readInstanceTemplate(instanceElm));
     }
 
     private static void writeID(Atom atom, Element atomElm) {
@@ -228,6 +237,32 @@ class DataModelXML extends DataModelInMem {
 	propertyElm.setAttribute(KEY_TAG, writeValue(key));
 	writeData(propertyElm, value);
 	propertiesElm.appendChild(propertyElm);
+    }
+
+    private static void writeInstanceTemplate(Instance instance, Element instanceElm) {
+	instanceElm.setAttribute(TEMPLATE_REF_TAG, instance.getTemplate().getID().toString());
+    }
+
+    private Template0 readInstanceTemplate(Element instanceElm) throws ParseException {
+	return getOrCreateEmptyTemplate(ID.valueOf(instanceElm.getAttribute(TEMPLATE_REF_TAG)));
+    }
+
+    private static void writeTemplateInstances(Template0 template, Element templateElm) {
+	Element instanceRefsElm = templateElm.getOwnerDocument().createElement(INSTANCE_REFS_TAG);
+	for (Instance0 instance : template.getInstances0()) {
+	    Element instanceRefElm = instanceRefsElm.getOwnerDocument().createElement(INSTANCE_REF_TAG);
+	    instanceRefElm.setAttribute(ID_REF_TAG, instance.getID().toString());
+	    instanceRefsElm.appendChild(instanceRefElm);
+	}
+	templateElm.appendChild(instanceRefsElm);
+    }
+
+    private Collection<Instance0> readTemplateInstances(Element templateElm) throws ParseException {
+	Collection<Instance0> instances = new ArrayList<>();
+	Element instanceRefsElm = getChildByTag(templateElm, INSTANCE_REFS_TAG);
+	for (Element instanceRefElm : getChildrenByTag(instanceRefsElm, INSTANCE_REF_TAG))
+	    instances.add(getOrCreateEmptyInstance(ID.valueOf(instanceRefElm.getAttribute(ID_REF_TAG))));
+	return instances;
     }
 
     private static enum DataType {
@@ -567,7 +602,7 @@ class DataModelXML extends DataModelInMem {
 	    }
 
 	    @Override
-	    Object[] readData(Element dataElm) {
+	    Object[] readData(Element dataElm) throws ParseException {
 		List<Object> result = new ArrayList<>();
 		readCollection(dataElm, result);
 		return result.toArray();
@@ -622,6 +657,18 @@ class DataModelXML extends DataModelInMem {
 		throw new IllegalArgumentException();
 	    }
 	},
+	IDDT {
+
+	    @Override
+	    void writeData0(Element dataElm, Object data) {
+		dataElm.setAttribute(ID_REF_TAG, ((ID) data).toString());
+	    }
+
+	    @Override
+	    Object readData(Element dataElm) throws ParseException {
+		return ID.valueOf(dataElm.getAttribute(ID_REF_TAG));
+	    }
+	},
 	ListDT {
 	    @Override
 	    void writeData0(Element dataElm, Object data) {
@@ -630,7 +677,7 @@ class DataModelXML extends DataModelInMem {
 	    }
 
 	    @Override
-	    List<Object> readData(Element dataElm) {
+	    List<Object> readData(Element dataElm) throws ParseException {
 		List<Object> result = new ArrayList<>();
 		readCollection(dataElm, result);
 		return result;
@@ -644,7 +691,7 @@ class DataModelXML extends DataModelInMem {
 	    }
 
 	    @Override
-	    Set<Object> readData(Element dataElm) {
+	    Set<Object> readData(Element dataElm) throws ParseException {
 		Set<Object> result = new HashSet<>();
 		readCollection(dataElm, result);
 		return result;
@@ -668,7 +715,7 @@ class DataModelXML extends DataModelInMem {
 	    }
 
 	    @Override
-	    Map<Object, Object> readData(Element dataElm) {
+	    Map<Object, Object> readData(Element dataElm) throws ParseException {
 		Map<Object, Object> result = new HashMap<>();
 		for (Element entryElm : getChildrenByTag(dataElm, DATA_TAG)) {
 		    Element keyElm = getChildByTag(entryElm, KEY_TAG);
@@ -712,12 +759,12 @@ class DataModelXML extends DataModelInMem {
 	    }
 	}
 
-	private static void readCollection(Element folderElm, Collection<Object> out) {
+	private static void readCollection(Element folderElm, Collection<Object> out) throws ParseException {
 	    for (Element objElm : getChildrenByTag(folderElm, DATA_TAG))
 		out.add(readDataType(objElm).readData(objElm));
 	}
 
-	abstract Object readData(Element dataElm);
+	abstract Object readData(Element dataElm) throws ParseException;
 
 	static DataType typeOf(Object data) {
 	    if (data == null)
@@ -799,7 +846,7 @@ class DataModelXML extends DataModelInMem {
 	DataType.typeOf(value).writeData(dataElm, value);
     }
 
-    private static Map<String, Object> readProperties(Element atomElm) {
+    private static Map<String, Object> readProperties(Element atomElm) throws ParseException {
 	Element propertiesElm = getChildByTag(atomElm, PROPERTIES_TAG);
 	Map<String, Object> properties = new HashMap<>();
 	for (Element propertyElm : getChildrenByTag(propertiesElm, PROPERTY_TAG)) {
@@ -815,7 +862,7 @@ class DataModelXML extends DataModelInMem {
 	return NO_VALUE.equals(value) ? null : value;
     }
 
-    private static Object readData(Element dataElm) {
+    private static Object readData(Element dataElm) throws ParseException {
 	return DataType.readDataType(dataElm).readData(dataElm);
     }
 

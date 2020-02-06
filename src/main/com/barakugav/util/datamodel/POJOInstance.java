@@ -1,10 +1,11 @@
 package com.barakugav.util.datamodel;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class POJOInstance extends POJOAtom implements Instance0 {
 
-    private static final String PROPERTY_TEMPLATE = ".Template";
+    private Template0 template;
 
     POJOInstance(ID id) {
 	super(id);
@@ -31,16 +32,15 @@ public class POJOInstance extends POJOAtom implements Instance0 {
 
     @Override
     public Template0 getTemplate() {
-	return getProperty(PROPERTY_TEMPLATE);
+	return template;
     }
 
     @Override
     public boolean setTemplate(Template0 template) {
-	return setTemplate0(template);
-    }
-
-    private boolean setTemplate0(Template template) {
-	return setProperty(PROPERTY_TEMPLATE, template);
+	if (Objects.equals(template, this.template))
+	    return false;
+	this.template = template;
+	return true;
     }
 
 }

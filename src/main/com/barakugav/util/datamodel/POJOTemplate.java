@@ -1,50 +1,54 @@
 package com.barakugav.util.datamodel;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class POJOTemplate extends POJOAtom implements Template0 {
 
-    private static final String PROPERTY_INSTANCES = ".Instances";
+    private final Set<Instance0> instances;
 
     POJOTemplate(ID id) {
 	super(id);
-	setInstances(new ArrayList<Instance>(0));
+	instances = new HashSet<>(0);
     }
 
     @Override
     public boolean delete() {
 	if (!super.delete())
 	    return false;
-	for (Instance instance : instances())
+	for (Instance instance : instances)
 	    instance.delete();
-	instances().clear();
+	instances.clear();
 	return true;
     }
 
     @Override
     public Collection<Instance> getInstances() {
-	return Collections.unmodifiableCollection(instances());
+	return Collections.unmodifiableCollection(instances);
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public Collection<Instance0> getInstances0() {
-	return (Collection) instances();
+	return instances;
     }
 
-    boolean addInstance(Instance instance) {
+    @Override
+    public boolean addInstance(Instance0 instance) {
 	assert equals(instance.getTemplate());
-	return instances().add(instance);
+	return instances.add(instance);
     }
 
-    private Collection<Instance> instances() {
-	return getProperty(PROPERTY_INSTANCES);
-    }
-
-    private boolean setInstances(Collection<Instance> instances) {
-	return setProperty(PROPERTY_INSTANCES, instances);
+    @Override
+    public boolean setInstances(Collection<Instance0> instances) {
+	if (instances == null)
+	    instances = Collections.emptyList();
+	if (instances.equals(this.instances))
+	    return false;
+	this.instances.clear();
+	this.instances.addAll(instances);
+	return true;
     }
 
 }
