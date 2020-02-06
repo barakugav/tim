@@ -3,45 +3,45 @@ package com.barakugav.util.datamodel;
 import java.util.Map;
 import java.util.Objects;
 
-class LoggerAtom extends ViewAtomAbstract {
+class EventedAtom extends ViewAtomAbstract {
 
-    private final ModelLogger logger;
+    private final EventManager eventManager;
 
-    LoggerAtom(Atom0 atom, ModelLogger logger) {
+    EventedAtom(Atom0 atom, EventManager eventManager) {
 	super(atom);
-	this.logger = Objects.requireNonNull(logger);
+	this.eventManager = Objects.requireNonNull(eventManager);
     }
 
     @Override
     public <V> boolean setProperty(String key, V value) {
-	V oldValue = getProperty(key);
 	if (!atom().setProperty(key, value))
 	    return false;
 	V newValue = getProperty(key);
-	logger().log(ModelLog.newChangeLog(getID(), key, oldValue, newValue));
+	eventManager().fireAtomPropertyChange(AtomEvent.newChangeEvent(getID(), key, newValue));
 	return true;
     }
 
     @Override
     public boolean setProperties(Map<String, ? extends Object> properties) {
-	Map<String, Object> oldValue = getProperties(true);
 	if (!atom().setProperties(properties))
 	    return false;
 	Map<String, Object> newValue = getProperties(true);
-	logger().log(ModelLog.newChangeLog(getID(), "properties", oldValue, newValue));
+	eventManager().fireAtomPropertyChange(AtomEvent.newChangeEvent(getID(), "properties", newValue));
 	return true;
     }
 
     @Override
     public boolean delete() {
+	if (isAlive())
+	    eventManager().fireAtomBeforeDelete(AtomEvent.newBeforeDeleteEvent(getID()));
 	if (!atom().delete())
 	    return false;
-	logger().log(ModelLog.newDeleteLog(getID()));
+	eventManager().fireAtomDeleted(AtomEvent.newDeleteEvent(getID()));
 	return true;
     }
 
-    ModelLogger logger() {
-	return logger;
+    EventManager eventManager() {
+	return eventManager;
     }
 
 }

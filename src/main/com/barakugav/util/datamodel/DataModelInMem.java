@@ -1,20 +1,29 @@
 package com.barakugav.util.datamodel;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
-abstract class StorageInMem implements Storage {
+abstract class DataModelInMem implements DataModel {
 
     private final Map<String, Table> tables;
-    private ModelLogger logger;
+    private final ModelLogger logger;
+    private final EventManager eventManager;
 
-    StorageInMem() {
+    private boolean isOpen;
+
+    DataModelInMem() {
 	tables = new HashMap<>();
 	logger = new ModelLoggerDefault();
+	eventManager = new EventManager();
+
+	isOpen = false;
     }
 
     @Override
@@ -31,11 +40,29 @@ abstract class StorageInMem implements Storage {
     }
 
     @Override
+    public Collection<Template> getTemplates(String tableName, Predicate<Template> condition) {
+	List<Template> result = new ArrayList<>();
+	for (Template template : getTemplates(tableName))
+	    if (condition.test(template))
+		result.add(template);
+	return result;
+    }
+
+    @Override
     public Collection<Instance> getInstances(String tableName) {
 	Table table = tables.get(tableName);
 	if (table == null)
 	    return Collections.emptySet();
 	return Collections.unmodifiableCollection(table.instance.values());
+    }
+
+    @Override
+    public Collection<Instance> getInstances(String tableName, Predicate<Instance> condition) {
+	List<Instance> result = new ArrayList<>();
+	for (Instance instance : getInstances(tableName))
+	    if (condition.test(instance))
+		result.add(instance);
+	return result;
     }
 
     @Override
@@ -57,7 +84,9 @@ abstract class StorageInMem implements Storage {
     @Override
     public Template0 newTemplate(String tableName) {
 	ID id = ID.newID(tableName);
-	return newEmptyTemplate(id);
+	Template0 template = newEmptyTemplate(id);
+	eventManager.fireTemplateCreated(new TableEvent(id));
+	return template;
     }
 
     @Override
@@ -66,33 +95,43 @@ abstract class StorageInMem implements Storage {
 	ID id = ID.newID(tableName);
 	Instance0 instance = newEmptyInstance(id);
 	instance.setTemplate((Template0) template);
+	eventManager.fireInstanceCreated(new TableEvent(id));
 	return instance;
     }
 
     Template0 newEmptyTemplate(ID id) {
-	Template0 result;
+	Template0 template;
 
 	// POJO level
-	result = new POJOTemplate(id);
-	// Mem/Cache level
-	result = new InMemTemplate(result);
+	template = new POJOTemplate(id);
 	// Logging level
-	result = new LoggerTemplate(result, logger);
+	template = new LoggerTemplate(template, logger);
+	// Evented level
+	template = new EventedTemplate(template, eventManager);
+	// Mem/Cache level
+	template = new InMemTemplate(template);
 
-	return result;
+	return template;
     }
 
     Instance0 newEmptyInstance(ID id) {
-	Instance0 result;
+	Instance0 instance;
 
 	// POJO level
-	result = new POJOInstance(id);
-	// Mem/Cache level
-	result = new InMemInstance(result);
+	instance = new POJOInstance(id);
 	// Logging level
-	result = new LoggerInstance(result, logger);
+	instance = new LoggerInstance(instance, logger);
+	// Evented level
+	instance = new EventedInstance(instance, eventManager);
+	// Mem/Cache level
+	instance = new InMemInstance(instance);
 
-	return result;
+	return instance;
+    }
+
+    @Override
+    public EventManager getEventManager() {
+	return eventManager;
     }
 
     @Override
@@ -107,17 +146,46 @@ abstract class StorageInMem implements Storage {
     }
 
     @Override
-    public void open() {
-
+    public boolean isOpen() {
+	return isOpen;
     }
 
     @Override
-    public void close() {
+    public final void open() {
+	if (open0())
+	    eventManager.fireModelOpened(new ModelEvent(this));
+    }
+
+    boolean open0() {
+	if (isOpen())
+	    return false;
+
+	// Nothing to do here
+
+	isOpen = true;
+	return true;
+    }
+
+    @Override
+    public final void close() {
+	if (isOpen())
+	    eventManager.fireModelBeforeClose(new ModelEvent(this));
+	if (close0())
+	    eventManager.fireModelClosed(new ModelEvent(this));
+    }
+
+    boolean close0() {
+	if (!isOpen())
+	    return false;
+
 	for (Table table : tables.values()) {
 	    table.templates.clear();
 	    table.instance.clear();
 	}
 	tables.clear();
+
+	isOpen = false;
+	return true;
     }
 
     boolean isInMemory(ID id) {

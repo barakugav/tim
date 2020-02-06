@@ -18,7 +18,7 @@ public interface Atom {
 
     public <V> boolean setProperty(String key, V value);
 
-    public boolean setProperties(Map<String, Object> properties);
+    public boolean setProperties(Map<String, ? extends Object> properties);
 
     public boolean delete();
 

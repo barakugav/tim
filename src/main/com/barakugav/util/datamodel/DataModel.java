@@ -1,14 +1,19 @@
 package com.barakugav.util.datamodel;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
-interface Storage {
+public interface DataModel {
 
     Collection<String> tableNames();
 
     Collection<Template> getTemplates(String tableName);
 
+    Collection<Template> getTemplates(String tableName, Predicate<Template> condition);
+
     Collection<Instance> getInstances(String tableName);
+
+    Collection<Instance> getInstances(String tableName, Predicate<Instance> condition);
 
     Template getTemplate(ID id);
 
@@ -18,7 +23,11 @@ interface Storage {
 
     Instance newInstance(Template template);
 
+    EventManager getEventManager();
+
     Collection<ID> getChangedAtoms(long begin, long end);
+
+    boolean isOpen();
 
     void open();
 

@@ -47,7 +47,7 @@ public class POJOAtom implements Atom0 {
     }
 
     @Override
-    public boolean setProperties(Map<String, Object> properties) {
+    public boolean setProperties(Map<String, ? extends Object> properties) {
 	if (properties == null)
 	    properties = Collections.emptyMap();
 	Map<String, Object> newProperties = new HashMap<>(properties);

@@ -35,7 +35,7 @@ interface ViewAtom extends Atom0 {
     }
 
     @Override
-    default boolean setProperties(Map<String, Object> properties) {
+    default boolean setProperties(Map<String, ? extends Object> properties) {
 	return atom().setProperties(properties);
     }
 

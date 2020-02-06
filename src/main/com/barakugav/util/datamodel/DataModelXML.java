@@ -32,7 +32,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-class StorageXML extends StorageInMem {
+class DataModelXML extends DataModelInMem {
 
     private final String path;
 
@@ -55,27 +55,31 @@ class StorageXML extends StorageInMem {
 
     private static final String NO_VALUE = "__NO_VALUE__";
 
-    public StorageXML() {
+    DataModelXML() {
 	this("repository/test.xml");// TODO
     }
 
-    public StorageXML(String path) {
+    DataModelXML(String path) {
 	// CXUtils.requireValidPath(path);
 	this.path = path;
     }
 
     @Override
-    public void open() {
-	super.open();
+    boolean open0() {
+	if (!super.open0())
+	    return false;
 	try {
 	    read(path);
+	    return true;
 	} catch (Exception e) {
 	    throw new RuntimeException(e);
 	}
     }
 
     @Override
-    public void close() {
+    boolean close0() {
+	if (!isOpen())
+	    return false;
 	List<Exception> ex = new ArrayList<>(0);
 	try {
 	    write(path);
@@ -83,7 +87,7 @@ class StorageXML extends StorageInMem {
 	    ex.add(e);
 	}
 	try {
-	    super.close();
+	    super.close0();
 	} catch (Exception e) {
 	    ex.add(e);
 	}
@@ -92,6 +96,7 @@ class StorageXML extends StorageInMem {
 		e.printStackTrace();
 	    throw new RuntimeException(ex.get(0));
 	}
+	return true;
     }
 
     private void read(String filePath) throws SAXException, IOException, ParserConfigurationException, ParseException {
