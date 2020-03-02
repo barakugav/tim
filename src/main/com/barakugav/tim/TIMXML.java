@@ -211,8 +211,9 @@ class TIMXML extends TIMInMem {
 	ID id = readID(instanceElm);
 	Map<String, Object> properties = readProperties(instanceElm);
 	Instance0 instance = getOrCreateEmptyInstance(id);
+	ID template = readInstanceTemplate(instanceElm);
+	instance.setTemplate(template);
 	instance.setProperties(properties);
-	instance.setTemplate(readInstanceTemplate(instanceElm));
     }
 
     private static void writeID(Atom atom, Element atomElm) {
@@ -225,7 +226,7 @@ class TIMXML extends TIMInMem {
 
     private static void writeProperties(Atom atom, Element atomElm) {
 	Element propertiesElm = atomElm.getOwnerDocument().createElement(PROPERTIES_TAG);
-	for (Map.Entry<String, Object> property : atom.getProperties(true).entrySet())
+	for (Map.Entry<String, Object> property : atom.getProperties().entrySet())
 	    writeProperty(propertiesElm, property.getKey(), property.getValue());
 	atomElm.appendChild(propertiesElm);
     }
@@ -243,25 +244,25 @@ class TIMXML extends TIMInMem {
 	instanceElm.setAttribute(TEMPLATE_REF_TAG, instance.getTemplate().getID().toString());
     }
 
-    private Template0 readInstanceTemplate(Element instanceElm) throws ParseException {
-	return getOrCreateEmptyTemplate(ID.valueOf(instanceElm.getAttribute(TEMPLATE_REF_TAG)));
+    private static ID readInstanceTemplate(Element instanceElm) throws ParseException {
+	return ID.valueOf(instanceElm.getAttribute(TEMPLATE_REF_TAG));
     }
 
     private static void writeTemplateInstances(Template0 template, Element templateElm) {
 	Element instanceRefsElm = templateElm.getOwnerDocument().createElement(INSTANCE_REFS_TAG);
-	for (Instance0 instance : template.getInstances0()) {
+	for (ID instance : template.getInstances0()) {
 	    Element instanceRefElm = instanceRefsElm.getOwnerDocument().createElement(INSTANCE_REF_TAG);
-	    instanceRefElm.setAttribute(ID_REF_TAG, instance.getID().toString());
+	    instanceRefElm.setAttribute(ID_REF_TAG, instance.toString());
 	    instanceRefsElm.appendChild(instanceRefElm);
 	}
 	templateElm.appendChild(instanceRefsElm);
     }
 
-    private Collection<Instance0> readTemplateInstances(Element templateElm) throws ParseException {
-	Collection<Instance0> instances = new ArrayList<>();
+    private static Collection<ID> readTemplateInstances(Element templateElm) throws ParseException {
+	Collection<ID> instances = new ArrayList<>();
 	Element instanceRefsElm = getChildByTag(templateElm, INSTANCE_REFS_TAG);
 	for (Element instanceRefElm : getChildrenByTag(instanceRefsElm, INSTANCE_REF_TAG))
-	    instances.add(getOrCreateEmptyInstance(ID.valueOf(instanceRefElm.getAttribute(ID_REF_TAG))));
+	    instances.add(ID.valueOf(instanceRefElm.getAttribute(ID_REF_TAG)));
 	return instances;
     }
 

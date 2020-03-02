@@ -42,10 +42,10 @@ class AtomLayerLogger implements AtomLayer {
 
 	@Override
 	public boolean setProperties(Map<String, ? extends Object> properties) {
-	    Map<String, Object> oldValue = getProperties(true);
+	    Map<String, Object> oldValue = getProperties();
 	    if (!atom().setProperties(properties))
 		return false;
-	    Map<String, Object> newValue = getProperties(true);
+	    Map<String, Object> newValue = getProperties();
 	    logger().log(ModelLog.newChangeLog(getID(), "properties", oldValue, newValue));
 	    return true;
 	}
@@ -93,11 +93,11 @@ class AtomLayerLogger implements AtomLayer {
 	}
 
 	@Override
-	public boolean setTemplate(Template0 template) {
-	    Template0 oldValue = getTemplate();
+	public boolean setTemplate(ID template) {
+	    ID oldValue = getTemplate0();
 	    if (!atom().setTemplate(template))
 		return false;
-	    Template0 newValue = getTemplate();
+	    ID newValue = getTemplate0();
 	    logger().log(ModelLog.newChangeLog(getID(), "template", oldValue, newValue));
 	    return true;
 	}

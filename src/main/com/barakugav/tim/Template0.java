@@ -4,10 +4,12 @@ import java.util.Collection;
 
 interface Template0 extends Atom0, Template {
 
-    Collection<Instance0> getInstances0();
+    Collection<ID> getInstances0();
 
-    boolean addInstance(Instance0 instance);
+    boolean addInstance(ID instance);
 
-    boolean setInstances(Collection<Instance0> instances);
+    boolean removeInstance(ID instance);
+
+    boolean setInstances(Collection<ID> instances);
 
 }

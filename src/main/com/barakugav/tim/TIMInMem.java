@@ -4,18 +4,24 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
+
+import com.barakugav.event.EventCenter;
+import com.barakugav.event.EventCunsumer;
+import com.barakugav.event.EventProducer;
 
 abstract class TIMInMem implements TIModel {
 
+    private final String name;
+
     private final Map<String, Table> tables;
+    private final AtomResolver resolver;
 
     private final ModelLogger logger;
-    private final EventManager eventManager;
+    private final EventProducer eventProducer;
 
     private final AtomConstructor atomConstructor;
     private final AtomLayer atomLayerLogger;
@@ -24,14 +30,23 @@ abstract class TIMInMem implements TIModel {
     private boolean isOpen;
 
     TIMInMem() {
+	this("TIModel");
+    }
+
+    TIMInMem(String name) {
+	this.name = Objects.requireNonNull(name);
+
 	tables = new HashMap<>();
+	resolver = new AtomResolverOnModel(this);
 
 	logger = new ModelLoggerDefault();
-	eventManager = new EventManager();
+	eventProducer = EventCenter.getInstance().newProducer(name);
 
-	atomConstructor = new AtomConstructorPOJO();
+	POJOAtomConstructor ac = new POJOAtomConstructor();
+	ac.setAtomResolver(resolver);
+	atomConstructor = ac;
 	atomLayerLogger = new AtomLayerLogger(logger);
-	atomLayerListeners = new AtomLayerListeners(eventManager);
+	atomLayerListeners = new AtomLayerListeners(eventProducer);
 
 	isOpen = false;
     }
@@ -120,7 +135,7 @@ abstract class TIMInMem implements TIModel {
     public Template0 newTemplate(String tableName) {
 	ID id = ID.newID(tableName, ID.Type.Template);
 	Template0 template = newEmptyTemplate(id);
-	eventManager.fireTemplateCreated(new TableEvent(id));
+	postNewAtomEvent(template);
 	return template;
     }
 
@@ -129,9 +144,9 @@ abstract class TIMInMem implements TIModel {
 	String tableName = template.getID().getTableName();
 	ID id = ID.newID(tableName, ID.Type.Instance);
 	Instance0 instance = newEmptyInstance(id);
-	instance.setTemplate((Template0) template);
-	((Template0) template).addInstance(instance);
-	eventManager.fireInstanceCreated(new TableEvent(id));
+	instance.setTemplate(template.getID());
+	((Template0) template).addInstance(id);
+	postNewAtomEvent(instance);
 	return instance;
     }
 
@@ -195,19 +210,8 @@ abstract class TIMInMem implements TIModel {
     }
 
     @Override
-    public EventManager getEventManager() {
-	return eventManager;
-    }
-
-    @Override
-    public Collection<ID> getChangedAtoms(long begin, long end) {
-	if (logger == null)
-	    throw new UnsupportedOperationException();
-	Iterator<ModelLog> logs = logger.getLogs(begin, end);
-	Collection<ID> result = new HashSet<>();
-	for (; logs.hasNext();)
-	    result.add(logs.next().getSource());
-	return result;
+    public EventCunsumer getEventCunsumer() {
+	return EventCenter.getInstance().newCunsumer(name);
     }
 
     @Override
@@ -218,7 +222,7 @@ abstract class TIMInMem implements TIModel {
     @Override
     public final void open() {
 	if (open0())
-	    eventManager.fireModelOpened(new ModelEvent(this));
+	    eventProducer.postEvent(name, new ModelOpenLog());
     }
 
     boolean open0() {
@@ -233,10 +237,8 @@ abstract class TIMInMem implements TIModel {
 
     @Override
     public final void close() {
-	if (isOpen())
-	    eventManager.fireModelBeforeClose(new ModelEvent(this));
 	if (close0())
-	    eventManager.fireModelClosed(new ModelEvent(this));
+	    eventProducer.postEvent(name, new ModelCloseLog());
     }
 
     boolean close0() {
@@ -279,6 +281,12 @@ abstract class TIMInMem implements TIModel {
 	if (atom instanceof Instance)
 	    return table.instances.remove(id, atom);
 	throw new IllegalArgumentException("Unkown atom type: " + atom.getClass());
+    }
+
+    private void postNewAtomEvent(Atom atom) {
+	DTOAtom dto = DTOAtom.valueOf(atom);
+	AtomChangeLog changeLog = new AtomChangeLog(null, dto);
+	eventProducer.postEvent(atom.getID().toString(), changeLog, atom.getVersion());
     }
 
     private static class Table {

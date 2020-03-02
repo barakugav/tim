@@ -2,7 +2,7 @@ package com.barakugav.tim;
 
 import java.util.Objects;
 
-class AbstractViewAtom extends AbstractAtom implements ViewAtom {
+abstract class AbstractViewAtom extends AbstractAtom implements ViewAtom {
 
     private final Atom0 atom;
 

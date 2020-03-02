@@ -8,7 +8,12 @@ interface ViewInstance extends ViewAtom, Instance0 {
     }
 
     @Override
-    default boolean setTemplate(Template0 template) {
+    default ID getTemplate0() {
+	return atom().getTemplate0();
+    }
+
+    @Override
+    default boolean setTemplate(ID template) {
 	return atom().setTemplate(template);
     }
 

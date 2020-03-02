@@ -10,22 +10,27 @@ interface ViewTemplate extends ViewAtom, Template0 {
     }
 
     @Override
-    default Collection<Instance0> getInstances0() {
+    default Collection<ID> getInstances0() {
 	return atom().getInstances0();
     }
-    
+
     @Override
     default int getInstanceCount() {
 	return atom().getInstanceCount();
     }
 
     @Override
-    default boolean addInstance(Instance0 instance) {
+    default boolean addInstance(ID instance) {
 	return atom().addInstance(instance);
     }
 
     @Override
-    default boolean setInstances(Collection<Instance0> instances) {
+    default boolean removeInstance(ID instance) {
+	return atom().removeInstance(instance);
+    }
+
+    @Override
+    default boolean setInstances(Collection<ID> instances) {
 	return atom().setInstances(instances);
     }
 

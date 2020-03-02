@@ -25,11 +25,6 @@ interface ViewAtom extends Atom0 {
     }
 
     @Override
-    default Map<String, Object> getProperties(boolean includeHidden) {
-	return atom().getProperties(includeHidden);
-    }
-
-    @Override
     default <V> boolean setProperty(String key, V value) {
 	return atom().setProperty(key, value);
     }
@@ -42,6 +37,11 @@ interface ViewAtom extends Atom0 {
     @Override
     default boolean removeProperty(String key) {
 	return atom().removeProperty(key);
+    }
+
+    @Override
+    default long getVersion() {
+	return atom().getVersion();
     }
 
     @Override

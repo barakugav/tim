@@ -3,6 +3,8 @@ package com.barakugav.tim;
 import java.util.Collection;
 import java.util.function.Predicate;
 
+import com.barakugav.event.EventCunsumer;
+
 public interface TIModel {
 
     Collection<String> tableNames();
@@ -27,9 +29,7 @@ public interface TIModel {
 
     boolean contains(ID id);
 
-    EventManager getEventManager();
-
-    Collection<ID> getChangedAtoms(long begin, long end);
+    EventCunsumer getEventCunsumer();
 
     boolean isOpen();
 

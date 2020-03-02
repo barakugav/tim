@@ -10,11 +10,7 @@ public interface Atom {
 
     public boolean containsProperty(String key);
 
-    default Map<String, Object> getProperties() {
-	return getProperties(false);
-    }
-
-    public Map<String, Object> getProperties(boolean includeHidden);
+    public Map<String, Object> getProperties();
 
     public <V> boolean setProperty(String key, V value);
 
@@ -22,16 +18,14 @@ public interface Atom {
 
     public boolean removeProperty(String key);
 
+    public long getVersion();
+    
     public boolean delete();
 
     public boolean isAlive();
 
     public static boolean isValidPropertyKey(String key) {
-	return key != null && !key.isBlank();
-    }
-
-    public static boolean isHiddenProperty(String key) {
-	return key != null && key.startsWith(".");
+	return key != null && !key.isBlank();// && key.matches("[a-zA-Z][a-zA-Z0-9_]*");
     }
 
 }
