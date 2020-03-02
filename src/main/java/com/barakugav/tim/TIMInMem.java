@@ -40,7 +40,7 @@ abstract class TIMInMem implements TIModel {
 	resolver = new AtomResolverOnModel(this);
 
 	logger = new ModelLoggerDefault();
-	eventProducer = EventCenter.getInstance().newProducer(name);
+	eventProducer = EventCenter.newProducer(name);
 
 	POJOAtomConstructor ac = new POJOAtomConstructor();
 	ac.setAtomResolver(resolver);
@@ -211,7 +211,7 @@ abstract class TIMInMem implements TIModel {
 
     @Override
     public EventCunsumer getEventCunsumer() {
-	return EventCenter.getInstance().newCunsumer(name);
+	return EventCenter.newCunsumer(name);
     }
 
     @Override
@@ -220,30 +220,19 @@ abstract class TIMInMem implements TIModel {
     }
 
     @Override
-    public final void open() {
-	if (open0())
-	    eventProducer.postEvent(name, new ModelOpenLog());
-    }
-
-    boolean open0() {
+    public void open() {
 	if (isOpen())
-	    return false;
+	    return;
 
 	// Nothing to do here
 
 	isOpen = true;
-	return true;
     }
 
     @Override
-    public final void close() {
-	if (close0())
-	    eventProducer.postEvent(name, new ModelCloseLog());
-    }
-
-    boolean close0() {
+    public void close() {
 	if (!isOpen())
-	    return false;
+	    return;
 
 	for (Table table : tables.values()) {
 	    table.templates.clear();
@@ -252,7 +241,6 @@ abstract class TIMInMem implements TIModel {
 	tables.clear();
 
 	isOpen = false;
-	return true;
     }
 
     private void addToMem(Atom0 atom) {
@@ -284,9 +272,10 @@ abstract class TIMInMem implements TIModel {
     }
 
     private void postNewAtomEvent(Atom atom) {
-	DTOAtom dto = DTOAtom.valueOf(atom);
-	AtomChangeLog changeLog = new AtomChangeLog(null, dto);
-	eventProducer.postEvent(atom.getID().toString(), changeLog, atom.getVersion());
+	String key = atom.getID().toString();
+	Object data = DTOAtom.valueOf(atom);
+	long version = atom.getVersion();
+	eventProducer.postEvent(key, data, version);
     }
 
     private static class Table {

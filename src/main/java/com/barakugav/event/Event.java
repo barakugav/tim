@@ -24,6 +24,10 @@ public final class Event {
 	return key;
     }
 
+    public Object getData(Deserializer deserializer) throws ClassNotFoundException {
+	return deserializer.deserialize(data);
+    }
+
     public long getVersion() {
 	return version;
     }

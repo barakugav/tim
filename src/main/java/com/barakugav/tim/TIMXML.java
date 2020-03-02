@@ -70,21 +70,21 @@ class TIMXML extends TIMInMem {
     }
 
     @Override
-    boolean open0() {
-	if (!super.open0())
-	    return false;
+    public void open() {
+	if (isOpen())
+	    return;
+	super.open();
 	try {
 	    read(path);
-	    return true;
 	} catch (Exception e) {
 	    throw new RuntimeException(e);
 	}
     }
 
     @Override
-    boolean close0() {
+    public void close() {
 	if (!isOpen())
-	    return false;
+	    return;
 	List<Exception> ex = new ArrayList<>(0);
 	try {
 	    write(path);
@@ -92,7 +92,7 @@ class TIMXML extends TIMInMem {
 	    ex.add(e);
 	}
 	try {
-	    super.close0();
+	    super.close();
 	} catch (Exception e) {
 	    ex.add(e);
 	}
@@ -101,7 +101,6 @@ class TIMXML extends TIMInMem {
 		e.printStackTrace();
 	    throw new RuntimeException(ex.get(0));
 	}
-	return true;
     }
 
     private void read(String filePath) throws SAXException, IOException, ParserConfigurationException, ParseException {

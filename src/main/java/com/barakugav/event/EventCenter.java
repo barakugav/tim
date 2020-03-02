@@ -16,20 +16,16 @@ public class EventCenter {
 	topics = new ConcurrentHashMap<>();
     }
 
-    public static EventCenter getInstance() {
-	return INSTANCE;
+    public static EventProducer newProducer(String topic) {
+	return new EventProducerImpl(topic(topic));
     }
 
-    public EventProducer newProducer(String topic) {
-	return topic(topic).newProducer();
+    public static EventCunsumer newCunsumer(String topic) {
+	return new EventCunsumerImpl(topic(topic));
     }
 
-    public EventCunsumer newCunsumer(String topic) {
-	return topic(topic).newCunsumer();
-    }
-
-    private Topic topic(String topic) {
-	return topics.computeIfAbsent(Objects.requireNonNull(topic), t -> new Topic(t));
+    private static Topic topic(String name) {
+	return INSTANCE.topics.computeIfAbsent(Objects.requireNonNull(name), Topic::new);
     }
 
     private static class Topic {
@@ -37,17 +33,9 @@ public class EventCenter {
 	private final String name;
 	private final List<Event> events;
 
-	Topic(String topic) {
-	    this.name = Objects.requireNonNull(topic);
+	Topic(String name) {
+	    this.name = Objects.requireNonNull(name);
 	    events = new ArrayList<>();
-	}
-
-	EventProducer newProducer() {
-	    return new EventProducerImpl(this);
-	}
-
-	EventCunsumer newCunsumer() {
-	    return new EventCunsumerImpl(this);
 	}
 
     }

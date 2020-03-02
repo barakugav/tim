@@ -35,51 +35,41 @@ class AtomLayerListeners implements AtomLayer {
 
 	@Override
 	public <V> boolean setProperty(String key, V value) {
-	    DTOAtom before = toDTO();
 	    if (!atom().setProperty(key, value))
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
 	@Override
 	public boolean setProperties(Map<String, ? extends Object> properties) {
-	    DTOAtom before = toDTO();
 	    if (!atom().setProperties(properties))
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
 	@Override
 	public boolean removeProperty(String key) {
-	    DTOAtom before = toDTO();
 	    if (!atom().removeProperty(key))
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
 	@Override
 	public boolean delete() {
-	    DTOAtom before = toDTO();
 	    if (!atom().delete())
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
-	EventProducer eventProducer() {
-	    return eventProducer;
-	}
-
-	DTOAtom toDTO() {
-	    return DTOAtom.valueOf(this);
-	}
-
-	void postEvent(DTOAtom before) {
-	    AtomChangeLog changeLog = new AtomChangeLog(before, toDTO());
-	    eventProducer().postEvent(getID().toString(), changeLog, getVersion());
+	void postEvent() {
+	    String key = getID().toString();
+	    Object data = DTOAtom.valueOf(this);
+	    long version = getVersion();
+	    eventProducer.postEvent(key, data, version);
 	}
 
     }
@@ -97,28 +87,25 @@ class AtomLayerListeners implements AtomLayer {
 
 	@Override
 	public boolean addInstance(ID instance) {
-	    DTOAtom before = toDTO();
 	    if (!atom().addInstance(instance))
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
 	@Override
 	public boolean removeInstance(ID instance) {
-	    DTOAtom before = toDTO();
 	    if (!atom().removeInstance(instance))
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
 	@Override
 	public boolean setInstances(Collection<ID> instances) {
-	    DTOAtom before = toDTO();
 	    if (!atom().setInstances(instances))
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
@@ -137,10 +124,9 @@ class AtomLayerListeners implements AtomLayer {
 
 	@Override
 	public boolean setTemplate(ID template) {
-	    DTOAtom before = toDTO();
 	    if (!atom().setTemplate(template))
 		return false;
-	    postEvent(before);
+	    postEvent();
 	    return true;
 	}
 
