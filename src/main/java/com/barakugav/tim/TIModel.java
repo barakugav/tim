@@ -3,7 +3,7 @@ package com.barakugav.tim;
 import java.util.Collection;
 import java.util.function.Predicate;
 
-import com.barakugav.emagnetar.EventCunsumer;
+import com.barakugav.emagnetar.Consumer;
 
 public interface TIModel {
 
@@ -29,12 +29,16 @@ public interface TIModel {
 
     boolean contains(ID id);
 
-    EventCunsumer getEventCunsumer();
+    Consumer getEventConsumer();
 
     boolean isOpen();
 
     void open();
 
     void close();
+
+    public static TIModel getDefault() {
+	return new TIMXML();
+    }
 
 }

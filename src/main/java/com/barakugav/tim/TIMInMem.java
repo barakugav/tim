@@ -9,9 +9,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import com.barakugav.emagnetar.EventCenter;
-import com.barakugav.emagnetar.EventCunsumer;
-import com.barakugav.emagnetar.EventProducer;
+import com.barakugav.emagnetar.Consumer;
+import com.barakugav.emagnetar.EMagnetar;
+import com.barakugav.emagnetar.Producer;
+import com.barakugav.tim.dto.DTOAtom;
+import com.barakugav.tim.log.ModelLogger;
 
 abstract class TIMInMem implements TIModel {
 
@@ -21,7 +23,7 @@ abstract class TIMInMem implements TIModel {
     private final AtomResolver resolver;
 
     private final ModelLogger logger;
-    private final EventProducer eventProducer;
+    private final Producer eventProducer;
 
     private final AtomConstructor atomConstructor;
     private final AtomLayer atomLayerLogger;
@@ -39,8 +41,8 @@ abstract class TIMInMem implements TIModel {
 	tables = new HashMap<>();
 	resolver = new AtomResolverOnModel(this);
 
-	logger = new ModelLoggerDefault();
-	eventProducer = EventCenter.newProducer(this.name);
+	logger = ModelLogger.getDefault();
+	eventProducer = EMagnetar.newProducer(this.name);
 
 	POJOAtomConstructor ac = new POJOAtomConstructor();
 	ac.setAtomResolver(resolver);
@@ -210,8 +212,8 @@ abstract class TIMInMem implements TIModel {
     }
 
     @Override
-    public EventCunsumer getEventCunsumer() {
-	return EventCenter.newCunsumer(eventProducer.getTopic());
+    public Consumer getEventConsumer() {
+	return EMagnetar.newConsumer(eventProducer.getTopic());
     }
 
     @Override

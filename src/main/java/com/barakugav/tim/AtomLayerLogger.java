@@ -3,6 +3,9 @@ package com.barakugav.tim;
 import java.util.Map;
 import java.util.Objects;
 
+import com.barakugav.tim.log.ModelLog;
+import com.barakugav.tim.log.ModelLogger;
+
 class AtomLayerLogger implements AtomLayer {
 
     private final ModelLogger logger;

@@ -1,8 +1,10 @@
-package com.barakugav.tim;
+package com.barakugav.tim.log;
 
 import java.util.Objects;
 
-class ModelLog {
+import com.barakugav.tim.ID;
+
+public class ModelLog {
 
     static enum LogAction {
 	Create, Change, Delete
@@ -30,39 +32,39 @@ class ModelLog {
 	timePoint = System.currentTimeMillis();
     }
 
-    ID getSource() {
+    public ID getSource() {
 	return source;
     }
 
-    LogAction getAction() {
+    public LogAction getAction() {
 	return action;
     }
 
-    String getChangeKey() {
+    public String getChangeKey() {
 	return changeKey;
     }
 
-    String getOldValue() {
+    public String getOldValue() {
 	return oldValue;
     }
 
-    String getNewValue() {
+    public String getNewValue() {
 	return newValue;
     }
 
-    long getTimePoint() {
+    public long getTimePoint() {
 	return timePoint;
     }
 
-    static ModelLog newCreateLog(ID source) {
+    public static ModelLog newCreateLog(ID source) {
 	return new ModelLog(source, LogAction.Create, null, null, null);
     }
 
-    static ModelLog newDeleteLog(ID source) {
+    public static ModelLog newDeleteLog(ID source) {
 	return new ModelLog(source, LogAction.Delete, null, null, null);
     }
 
-    static ModelLog newChangeLog(ID source, String changeKey, Object oldValue, Object newValue) {
+    public static ModelLog newChangeLog(ID source, String changeKey, Object oldValue, Object newValue) {
 	return new ModelLog(source, LogAction.Change, changeKey, String.valueOf(oldValue), String.valueOf(newValue));
     }
 

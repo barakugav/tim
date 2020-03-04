@@ -1,4 +1,7 @@
-package com.barakugav.tim;
+package com.barakugav.tim.dto;
+
+import com.barakugav.tim.ID;
+import com.barakugav.tim.Instance;
 
 public class DTOInstance extends DTOAtom {
 
@@ -6,7 +9,7 @@ public class DTOInstance extends DTOAtom {
 
     public DTOInstance(Instance instance) {
 	super(instance);
-	template = ((Instance0) instance).getTemplate0();
+	template = instance.getTemplate().getID();
     }
 
 }

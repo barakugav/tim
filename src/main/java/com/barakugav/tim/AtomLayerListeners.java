@@ -4,13 +4,14 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
-import com.barakugav.emagnetar.EventProducer;
+import com.barakugav.emagnetar.Producer;
+import com.barakugav.tim.dto.DTOAtom;
 
 class AtomLayerListeners implements AtomLayer {
 
-    private final EventProducer eventProducer;
+    private final Producer eventProducer;
 
-    AtomLayerListeners(EventProducer eventProducer) {
+    AtomLayerListeners(Producer eventProducer) {
 	this.eventProducer = Objects.requireNonNull(eventProducer);
     }
 
@@ -26,9 +27,9 @@ class AtomLayerListeners implements AtomLayer {
 
     private static abstract class EventedAtom extends AbstractViewAtom {
 
-	private final EventProducer eventProducer;
+	private final Producer eventProducer;
 
-	EventedAtom(Atom0 atom, EventProducer eventProducer) {
+	EventedAtom(Atom0 atom, Producer eventProducer) {
 	    super(atom);
 	    this.eventProducer = Objects.requireNonNull(eventProducer);
 	}
@@ -76,7 +77,7 @@ class AtomLayerListeners implements AtomLayer {
 
     private static class EventedTemplate extends EventedAtom implements ViewTemplate {
 
-	EventedTemplate(Template0 template, EventProducer eventProducer) {
+	EventedTemplate(Template0 template, Producer eventProducer) {
 	    super(template, eventProducer);
 	}
 
@@ -113,7 +114,7 @@ class AtomLayerListeners implements AtomLayer {
 
     private static class EventedInstance extends EventedAtom implements ViewInstance {
 
-	EventedInstance(Instance0 instance, EventProducer eventProducer) {
+	EventedInstance(Instance0 instance, Producer eventProducer) {
 	    super(instance, eventProducer);
 	}
 

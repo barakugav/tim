@@ -1,12 +1,12 @@
-package com.barakugav.tim;
+package com.barakugav.tim.log;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 import com.barakugav.tim.ID;
-import com.barakugav.tim.ModelLog;
-import com.barakugav.tim.ModelLog.LogAction;
+import com.barakugav.tim.log.ModelLog.LogAction;
 
 class ModelLogTest {
 

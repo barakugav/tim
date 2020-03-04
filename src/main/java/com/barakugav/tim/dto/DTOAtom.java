@@ -1,8 +1,13 @@
-package com.barakugav.tim;
+package com.barakugav.tim.dto;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.barakugav.tim.Atom;
+import com.barakugav.tim.ID;
+import com.barakugav.tim.Instance;
+import com.barakugav.tim.Template;
 
 public abstract class DTOAtom {
 
@@ -18,7 +23,7 @@ public abstract class DTOAtom {
 	version = atom.getVersion();
     }
 
-    static DTOAtom valueOf(Atom atom) {
+    public static DTOAtom valueOf(Atom atom) {
 	if (atom == null || !atom.isAlive())
 	    return null;
 	if (atom instanceof Template)

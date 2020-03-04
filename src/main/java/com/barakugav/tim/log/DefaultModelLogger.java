@@ -1,4 +1,4 @@
-package com.barakugav.tim;
+package com.barakugav.tim.log;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,11 +9,11 @@ import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-class ModelLoggerDefault implements ModelLogger {
+class DefaultModelLogger implements ModelLogger {
 
     private final SortedMap<Long, Collection<ModelLog>> logs;
 
-    ModelLoggerDefault() {
+    DefaultModelLogger() {
 	logs = new TreeMap<>();
     }
 

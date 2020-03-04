@@ -1,4 +1,4 @@
-package com.barakugav.tim;
+package com.barakugav.tim.log;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,39 +17,39 @@ class ModelLoggerDefaultTest {
     @SuppressWarnings("unused")
     @Test
     void createLogger() {
-	new ModelLoggerDefault();
+	new DefaultModelLogger();
     }
 
     @Test
     void logCreateLog() {
-	ModelLogger logger = new ModelLoggerDefault();
+	ModelLogger logger = new DefaultModelLogger();
 	ModelLog log = ModelLog.newCreateLog(ID.newID("table1", ID.Type.Template));
 	logger.log(log);
     }
 
     @Test
     void logDeleteLog() {
-	ModelLogger logger = new ModelLoggerDefault();
+	ModelLogger logger = new DefaultModelLogger();
 	ModelLog log = ModelLog.newDeleteLog(ID.newID("table1", ID.Type.Template));
 	logger.log(log);
     }
 
     @Test
     void logChangeLog() {
-	ModelLogger logger = new ModelLoggerDefault();
+	ModelLogger logger = new DefaultModelLogger();
 	ModelLog log = ModelLog.newChangeLog(ID.newID("table1", ID.Type.Template), "k", "o", "n");
 	logger.log(log);
     }
 
     @Test
     void getLogsEmptyLogger() {
-	ModelLogger logger = new ModelLoggerDefault();
+	ModelLogger logger = new DefaultModelLogger();
 	logger.getLogs(0, Long.MAX_VALUE);
     }
 
     @Test
     void getLogsEmptyLoggerIteratorEmpty() {
-	ModelLogger logger = new ModelLoggerDefault();
+	ModelLogger logger = new DefaultModelLogger();
 	Iterator<ModelLog> logs = logger.getLogs(0, Long.MAX_VALUE);
 	assertFalse(logs.hasNext());
     }
@@ -65,7 +65,7 @@ class ModelLoggerDefaultTest {
 	ModelLog log6 = ModelLog.newChangeLog(ID.newID("table2", ID.Type.Template), "k", "o", "n");
 	expected.addAll(Arrays.asList(log1, log2, log3, log4, log5, log6));
 
-	ModelLogger logger = new ModelLoggerDefault();
+	ModelLogger logger = new DefaultModelLogger();
 	logger.log(log1);
 	logger.log(log2);
 	logger.log(log3);
@@ -97,7 +97,7 @@ class ModelLoggerDefaultTest {
 	ModelLog log6 = ModelLog.newChangeLog(ID.newID("table2", ID.Type.Template), "k", "o", "n");
 	expected.addAll(Arrays.asList(log3, log4, log5));
 
-	ModelLogger logger = new ModelLoggerDefault();
+	ModelLogger logger = new DefaultModelLogger();
 	logger.log(log1);
 	logger.log(log2);
 	logger.log(log3);
