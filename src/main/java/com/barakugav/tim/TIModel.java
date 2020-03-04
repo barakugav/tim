@@ -3,7 +3,7 @@ package com.barakugav.tim;
 import java.util.Collection;
 import java.util.function.Predicate;
 
-import com.barakugav.event.EventCunsumer;
+import com.barakugav.emagnetar.EventCunsumer;
 
 public interface TIModel {
 

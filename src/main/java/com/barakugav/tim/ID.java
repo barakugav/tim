@@ -74,15 +74,19 @@ public final class ID {
     }
 
     public static ID valueOf(String s) throws ParseException {
-	String[] st = s.split(SEPARATOR);
-	if (st.length != 3)
-	    throw new ParseException(s, 0);
-	String tableName = st[0];
-	String typeStr = st[1];
-	Type type = Type.valueOf(typeStr);
-	String dataStr = st[2];
-	byte[] data = hexStringToBytes(dataStr);
-	return new ID(tableName, type, data);
+	try {
+	    String[] st = s.split(SEPARATOR);
+	    if (st.length != 3)
+		throw new ParseException(s, 0);
+	    String tableName = st[0];
+	    String typeStr = st[1];
+	    Type type = Type.valueOf(typeStr);
+	    String dataStr = st[2];
+	    byte[] data = hexStringToBytes(dataStr);
+	    return new ID(tableName, type, data);
+	} catch (IllegalArgumentException e) {
+	    throw new ParseException(e.getMessage(), 0);
+	}
     }
 
     private static String bytesToHexString(byte[] bytes) {

@@ -65,6 +65,11 @@ class TIMXML extends TIMInMem {
     }
 
     TIMXML(String path) {
+	this(path, "TIMXML");
+    }
+
+    TIMXML(String path, String name) {
+	super(name);
 	// CXUtils.requireValidPath(path);
 	this.path = path;
     }
