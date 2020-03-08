@@ -6,4 +6,6 @@ interface AtomConstructor {
 
     Instance0 newInstance(ID id);
 
+    void setAtomResolver(AtomResolver resolver);
+
 }

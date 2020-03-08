@@ -7,31 +7,38 @@ import java.util.Objects;
 import com.barakugav.emagnetar.Producer;
 import com.barakugav.tim.dto.DTOAtom;
 
-class AtomLayerListeners implements AtomLayer {
+class AtomLayerEvents implements AtomLayer {
 
     private final Producer eventProducer;
+    private volatile boolean enabled;
 
-    AtomLayerListeners(Producer eventProducer) {
+    AtomLayerEvents(Producer eventProducer) {
 	this.eventProducer = Objects.requireNonNull(eventProducer);
+	enabled = false;
+    }
+
+    void disable() {
+	enabled = false;
+    }
+
+    void enable() {
+	enabled = true;
     }
 
     @Override
     public Template0 layer(Template0 template) {
-	return new EventedTemplate(template, eventProducer);
+	return new EventedTemplate(template);
     }
 
     @Override
     public Instance0 layer(Instance0 instance) {
-	return new EventedInstance(instance, eventProducer);
+	return new EventedInstance(instance);
     }
 
-    private static abstract class EventedAtom extends AbstractViewAtom {
+    private abstract class EventedAtom extends AbstractViewAtom {
 
-	private final Producer eventProducer;
-
-	EventedAtom(Atom0 atom, Producer eventProducer) {
+	EventedAtom(Atom0 atom) {
 	    super(atom);
-	    this.eventProducer = Objects.requireNonNull(eventProducer);
 	}
 
 	@Override
@@ -67,18 +74,19 @@ class AtomLayerListeners implements AtomLayer {
 	}
 
 	void postEvent() {
-	    String key = getID().toString();
-	    Object data = DTOAtom.valueOf(this);
-	    long version = getVersion();
-	    eventProducer.postEvent(key, data, version);
+	    if (enabled) {
+		String key = getID().toString();
+		Object data = DTOAtom.valueOf(this);
+		eventProducer.postEvent(key, data);
+	    }
 	}
 
     }
 
-    private static class EventedTemplate extends EventedAtom implements ViewTemplate {
+    private class EventedTemplate extends EventedAtom implements ViewTemplate {
 
-	EventedTemplate(Template0 template, Producer eventProducer) {
-	    super(template, eventProducer);
+	EventedTemplate(Template0 template) {
+	    super(template);
 	}
 
 	@Override
@@ -112,10 +120,10 @@ class AtomLayerListeners implements AtomLayer {
 
     }
 
-    private static class EventedInstance extends EventedAtom implements ViewInstance {
+    private class EventedInstance extends EventedAtom implements ViewInstance {
 
-	EventedInstance(Instance0 instance, Producer eventProducer) {
-	    super(instance, eventProducer);
+	EventedInstance(Instance0 instance) {
+	    super(instance);
 	}
 
 	@Override

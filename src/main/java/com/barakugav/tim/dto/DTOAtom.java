@@ -1,5 +1,6 @@
 package com.barakugav.tim.dto;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +10,7 @@ import com.barakugav.tim.ID;
 import com.barakugav.tim.Instance;
 import com.barakugav.tim.Template;
 
-public abstract class DTOAtom {
+public abstract class DTOAtom implements Serializable {
 
     public final ID id;
     public final Map<String, Object> properties;
@@ -32,6 +33,11 @@ public abstract class DTOAtom {
 	    return new DTOInstance((Instance) atom);
 	else
 	    throw new IllegalArgumentException();
+    }
+
+    @Override
+    public String toString() {
+	return "{DTO[" + id + "], version[" + version + "]" + properties + "}";
     }
 
 }

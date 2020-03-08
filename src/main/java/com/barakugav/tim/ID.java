@@ -2,12 +2,13 @@ package com.barakugav.tim;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 
-public final class ID {
+public final class ID implements Serializable {
 
     public static enum Type {
 	Template, Instance
@@ -20,7 +21,7 @@ public final class ID {
 
     private static final Random rand = new Random();
     private static final int DATA_LENGTH = 16;
-    private static final String SEPARATOR = ";";
+    private static final String SEPARATOR = ".";
 
     private ID(String tableName, Type type, byte[] data) {
 	this.tableName = Objects.requireNonNull(tableName);
@@ -64,7 +65,7 @@ public final class ID {
     }
 
     private void computeHashCode() {
-	hash = Arrays.hashCode(data) ^ Objects.hashCode(tableName);
+	hash = Arrays.hashCode(data) ^ Objects.hashCode(tableName) ^ type.hashCode();
     }
 
     public static ID newID(String tableName, Type type) {
@@ -75,7 +76,7 @@ public final class ID {
 
     public static ID valueOf(String s) throws ParseException {
 	try {
-	    String[] st = s.split(SEPARATOR);
+	    String[] st = s.split("\\" + SEPARATOR);
 	    if (st.length != 3)
 		throw new ParseException(s, 0);
 	    String tableName = st[0];

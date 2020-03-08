@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import com.barakugav.emagnetar.Consumer;
 import com.barakugav.emagnetar.EMagnetar;
 import com.barakugav.emagnetar.Producer;
 import com.barakugav.tim.dto.DTOAtom;
@@ -26,8 +25,8 @@ abstract class TIMInMem implements TIModel {
     private final Producer eventProducer;
 
     private final AtomConstructor atomConstructor;
-    private final AtomLayer atomLayerLogger;
-    private final AtomLayer atomLayerListeners;
+    private final AtomLayerLogger atomLayerLogger;
+    private final AtomLayerEvents atomLayerEvents;
 
     private boolean isOpen;
 
@@ -44,11 +43,10 @@ abstract class TIMInMem implements TIModel {
 	logger = ModelLogger.getDefault();
 	eventProducer = EMagnetar.newProducer(this.name);
 
-	POJOAtomConstructor ac = new POJOAtomConstructor();
-	ac.setAtomResolver(resolver);
-	atomConstructor = ac;
+	atomConstructor = new POJOAtomConstructor();
+	atomConstructor.setAtomResolver(resolver);
 	atomLayerLogger = new AtomLayerLogger(logger);
-	atomLayerListeners = new AtomLayerListeners(eventProducer);
+	atomLayerEvents = new AtomLayerEvents(eventProducer);
 
 	isOpen = false;
     }
@@ -160,7 +158,7 @@ abstract class TIMInMem implements TIModel {
 	// Logging level
 	template = atomLayerLogger.layer(template);
 	// Evented level
-	template = atomLayerListeners.layer(template);
+	template = atomLayerEvents.layer(template);
 	// Mem/Cache level (Must be the last)
 	template = new InMemTemplate(template);
 
@@ -175,7 +173,7 @@ abstract class TIMInMem implements TIModel {
 	// Logging level
 	instance = atomLayerLogger.layer(instance);
 	// Evented level
-	instance = atomLayerListeners.layer(instance);
+	instance = atomLayerEvents.layer(instance);
 	// Mem/Cache level (Must be the last)
 	instance = new InMemInstance(instance);
 
@@ -212,8 +210,8 @@ abstract class TIMInMem implements TIModel {
     }
 
     @Override
-    public Consumer getEventConsumer() {
-	return EMagnetar.newConsumer(eventProducer.getTopic());
+    public String getEmagnetarTopic() {
+	return eventProducer.getTopic();
     }
 
     @Override
@@ -222,13 +220,40 @@ abstract class TIMInMem implements TIModel {
     }
 
     @Override
-    public void open() {
+    public final void open() {
 	if (isOpen())
 	    return;
-
-	// Nothing to do here
-
+	beforeOpen0();
+	open0();
+	afterOpen0();
 	isOpen = true;
+    }
+
+    protected void beforeOpen0() {
+	atomLayerLogger.disable();
+	atomLayerEvents.disable();
+	atomConstructor.setAtomResolver(new AtomResolver() {
+
+	    @Override
+	    public Template0 getTemplate(ID id) {
+		return getOrCreateEmptyTemplate(id);
+	    }
+
+	    @Override
+	    public Instance0 getInstance(ID id) {
+		return getOrCreateEmptyInstance(id);
+	    }
+	});
+    }
+
+    protected void open0() {
+	// Nothing to do here, should be overrided be sub implementation
+    }
+
+    protected void afterOpen0() {
+	atomLayerLogger.enable();
+	atomLayerEvents.enable();
+	atomConstructor.setAtomResolver(resolver);
     }
 
     @Override
@@ -276,8 +301,7 @@ abstract class TIMInMem implements TIModel {
     private void postNewAtomEvent(Atom atom) {
 	String key = atom.getID().toString();
 	Object data = DTOAtom.valueOf(atom);
-	long version = atom.getVersion();
-	eventProducer.postEvent(key, data, version);
+	eventProducer.postEvent(key, data);
     }
 
     private static class Table {
@@ -288,6 +312,11 @@ abstract class TIMInMem implements TIModel {
 	Table() {
 	    templates = new HashMap<>();
 	    instances = new HashMap<>();
+	}
+
+	@Override
+	public String toString() {
+	    return "templates: " + templates + " instances: " + instances;
 	}
 
     }

@@ -75,10 +75,9 @@ class TIMXML extends TIMInMem {
     }
 
     @Override
-    public void open() {
-	if (isOpen())
-	    return;
-	super.open();
+    public void open0() {
+	super.open0();
+	
 	try {
 	    read(path);
 	} catch (Exception e) {
@@ -275,6 +274,7 @@ class TIMXML extends TIMInMem {
 	NullDT {
 	    @Override
 	    void writeData0(Element dataElm, Object data) {
+		// write nothing, null value
 	    }
 
 	    @Override
@@ -914,11 +914,11 @@ class TIMXML extends TIMInMem {
     }
 
     private static Iterable<Element> getChildrenByTag(Node node, String tag) {
-	return new Iterable<Element>() {
+	return new Iterable<>() {
 
 	    @Override
 	    public Iterator<Element> iterator() {
-		return new Iterator<Element>() {
+		return new Iterator<>() {
 
 		    Node curser;
 		    boolean curserValid;

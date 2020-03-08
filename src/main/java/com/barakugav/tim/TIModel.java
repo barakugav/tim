@@ -3,8 +3,6 @@ package com.barakugav.tim;
 import java.util.Collection;
 import java.util.function.Predicate;
 
-import com.barakugav.emagnetar.Consumer;
-
 public interface TIModel {
 
     Collection<String> tableNames();
@@ -29,7 +27,7 @@ public interface TIModel {
 
     boolean contains(ID id);
 
-    Consumer getEventConsumer();
+    String getEmagnetarTopic();
 
     boolean isOpen();
 

@@ -32,4 +32,9 @@ class AtomConstructorAbstractViewAtoms implements AtomConstructor {
 	return a.newInstance(id);
     }
 
+    @Override
+    public void setAtomResolver(AtomResolver resolver) {
+	a.setAtomResolver(resolver);
+    }
+
 }
