@@ -20,4 +20,9 @@ class AtomResolverOnModel implements AtomResolver {
 	return (Template0) model.getTemplate(id);
     }
 
+    @Override
+    public Atom apply(ID id) {
+	return model.getAtom(id);
+    }
+
 }

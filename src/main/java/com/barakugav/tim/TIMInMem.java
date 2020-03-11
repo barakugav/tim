@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import com.barakugav.emagnetar.EMagnetar;
@@ -66,7 +68,7 @@ abstract class TIMInMem implements TIModel {
 	Table table = tables.get(tableName);
 	if (table == null)
 	    return Collections.emptySet();
-	return Collections.unmodifiableCollection(table.templates.values());
+	return Collections.unmodifiableCollection(table.getTemplates());
     }
 
     @Override
@@ -88,7 +90,7 @@ abstract class TIMInMem implements TIModel {
 	Table table = tables.get(tableName);
 	if (table == null)
 	    return Collections.emptySet();
-	return Collections.unmodifiableCollection(table.instances.values());
+	return Collections.unmodifiableCollection(table.getInstances());
     }
 
     @Override
@@ -105,14 +107,7 @@ abstract class TIMInMem implements TIModel {
 	Table table = tables.get(id.getTableName());
 	if (table == null)
 	    return null;
-	switch (id.getType()) {
-	case Template:
-	    return table.templates.get(id);
-	case Instance:
-	    return table.instances.get(id);
-	default:
-	    throw new IllegalArgumentException("Unexpected id: " + id);
-	}
+	return table.getAtom(id);
     }
 
     @Override
@@ -120,7 +115,7 @@ abstract class TIMInMem implements TIModel {
 	Table table = tables.get(id.getTableName());
 	if (table == null)
 	    return null;
-	return table.templates.get(id);
+	return table.getTemplate(id);
     }
 
     @Override
@@ -128,12 +123,12 @@ abstract class TIMInMem implements TIModel {
 	Table table = tables.get(id.getTableName());
 	if (table == null)
 	    return null;
-	return table.instances.get(id);
+	return table.getInstance(id);
     }
 
     @Override
     public Template0 newTemplate(String tableName) {
-	ID id = ID.newID(tableName, ID.Type.Template);
+	ID id = ID.newID(tableName);
 	Template0 template = newEmptyTemplate(id);
 	postNewAtomEvent(template);
 	return template;
@@ -142,7 +137,7 @@ abstract class TIMInMem implements TIModel {
     @Override
     public Instance0 newInstance(Template template) {
 	String tableName = template.getID().getTableName();
-	ID id = ID.newID(tableName, ID.Type.Instance);
+	ID id = ID.newID(tableName);
 	Instance0 instance = newEmptyInstance(id);
 	instance.setTemplate(template.getID());
 	((Template0) template).addInstance(id);
@@ -197,16 +192,7 @@ abstract class TIMInMem implements TIModel {
     @Override
     public boolean contains(ID id) {
 	Table table = tables.get(id.getTableName());
-	if (table == null)
-	    return false;
-	switch (id.getType()) {
-	case Template:
-	    return table.templates.containsKey(id);
-	case Instance:
-	    return table.instances.containsKey(id);
-	default:
-	    throw new IllegalArgumentException("Unexpected id: " + id);
-	}
+	return table != null && table.contains(id);
     }
 
     @Override
@@ -243,6 +229,11 @@ abstract class TIMInMem implements TIModel {
 	    public Instance0 getInstance(ID id) {
 		return getOrCreateEmptyInstance(id);
 	    }
+
+	    @Override
+	    public Atom apply(ID id) {
+		return getAtom(id);
+	    }
 	});
     }
 
@@ -274,28 +265,15 @@ abstract class TIMInMem implements TIModel {
 	ID id = atom.getID();
 	String tableName = id.getTableName();
 	Table table = tables.computeIfAbsent(tableName, n -> new Table());
-	Atom previous = null;
-	if (atom instanceof Template0)
-	    previous = table.templates.put(id, (Template0) atom);
-	else if (atom instanceof Instance0)
-	    previous = table.instances.put(id, (Instance0) atom);
-	else
-	    throw new IllegalArgumentException("Unkown atom type: " + atom.getClass());
-	if (previous != null)
-	    throw new IllegalArgumentException("Atom with same ID already exists: " + id);
+	table.add(atom);
     }
 
-    private boolean removeFromMem(Atom atom) {
+    private void removeFromMem(Atom atom) {
 	ID id = atom.getID();
 	String tableName = id.getTableName();
 	Table table = tables.get(tableName);
-	if (table == null)
-	    return false;
-	if (atom instanceof Template)
-	    return table.templates.remove(id, atom);
-	if (atom instanceof Instance)
-	    return table.instances.remove(id, atom);
-	throw new IllegalArgumentException("Unkown atom type: " + atom.getClass());
+	if (table != null)
+	    table.remove(id);
     }
 
     private void postNewAtomEvent(Atom atom) {
@@ -306,17 +284,67 @@ abstract class TIMInMem implements TIModel {
 
     private static class Table {
 
-	final Map<ID, Template0> templates;
-	final Map<ID, Instance0> instances;
+	private final Map<ID, Atom0> atoms;
+	private final Set<ID> templates;
+	private final Set<ID> instances;
 
 	Table() {
-	    templates = new HashMap<>();
-	    instances = new HashMap<>();
+	    atoms = new HashMap<>();
+	    templates = new HashSet<>();
+	    instances = new HashSet<>();
 	}
 
 	@Override
 	public String toString() {
-	    return "templates: " + templates + " instances: " + instances;
+	    return "atoms: " + atoms.values();
+	}
+
+	Atom0 getAtom(ID id) {
+	    return atoms.get(id);
+	}
+
+	Template0 getTemplate(ID id) {
+	    return (Template0) atoms.get(id);
+	}
+
+	Instance0 getInstance(ID id) {
+	    return (Instance0) atoms.get(id);
+	}
+
+	List<Template0> getTemplates() {
+	    List<Template0> result = new ArrayList<>(templates.size());
+	    for (ID template : templates)
+		result.add(getTemplate(template));
+	    return result;
+	}
+
+	List<Instance0> getInstances() {
+	    List<Instance0> result = new ArrayList<>(instances.size());
+	    for (ID instance : instances)
+		result.add(getInstance(instance));
+	    return result;
+	}
+
+	boolean contains(ID id) {
+	    return atoms.containsKey(id);
+	}
+
+	void remove(ID id) {
+	    Atom0 atom = atoms.remove(id);
+	    if (atom instanceof Template)
+		templates.remove(id);
+	    else
+		instances.remove(id);
+	}
+
+	void add(Atom0 atom) {
+	    ID id = atom.getID();
+	    if (atoms.put(id, atom) != null)
+		throw new IllegalArgumentException("Atom with same ID already exists: " + id);
+	    if (atom instanceof Template)
+		templates.add(id);
+	    else
+		instances.add(id);
 	}
 
     }

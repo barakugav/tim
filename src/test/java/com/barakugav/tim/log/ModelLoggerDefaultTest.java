@@ -23,21 +23,21 @@ class ModelLoggerDefaultTest {
     @Test
     void logCreateLog() {
 	ModelLogger logger = new DefaultModelLogger();
-	ModelLog log = ModelLog.newCreateLog(ID.newID("table1", ID.Type.Template));
+	ModelLog log = ModelLog.newCreateLog(ID.newID("table1"));
 	logger.log(log);
     }
 
     @Test
     void logDeleteLog() {
 	ModelLogger logger = new DefaultModelLogger();
-	ModelLog log = ModelLog.newDeleteLog(ID.newID("table1", ID.Type.Template));
+	ModelLog log = ModelLog.newDeleteLog(ID.newID("table1"));
 	logger.log(log);
     }
 
     @Test
     void logChangeLog() {
 	ModelLogger logger = new DefaultModelLogger();
-	ModelLog log = ModelLog.newChangeLog(ID.newID("table1", ID.Type.Template), "k", "o", "n");
+	ModelLog log = ModelLog.newChangeLog(ID.newID("table1"), "k", "o", "n");
 	logger.log(log);
     }
 
@@ -57,12 +57,12 @@ class ModelLoggerDefaultTest {
     @Test
     void getLogsAll6Logs() {
 	Set<ModelLog> expected = new HashSet<>();
-	ModelLog log1 = ModelLog.newCreateLog(ID.newID("table1", ID.Type.Template));
-	ModelLog log2 = ModelLog.newCreateLog(ID.newID("table2", ID.Type.Template));
-	ModelLog log3 = ModelLog.newDeleteLog(ID.newID("table1", ID.Type.Template));
-	ModelLog log4 = ModelLog.newDeleteLog(ID.newID("table2", ID.Type.Template));
-	ModelLog log5 = ModelLog.newChangeLog(ID.newID("table1", ID.Type.Template), "k", "o", "n");
-	ModelLog log6 = ModelLog.newChangeLog(ID.newID("table2", ID.Type.Template), "k", "o", "n");
+	ModelLog log1 = ModelLog.newCreateLog(ID.newID("table1"));
+	ModelLog log2 = ModelLog.newCreateLog(ID.newID("table2"));
+	ModelLog log3 = ModelLog.newDeleteLog(ID.newID("table1"));
+	ModelLog log4 = ModelLog.newDeleteLog(ID.newID("table2"));
+	ModelLog log5 = ModelLog.newChangeLog(ID.newID("table1"), "k", "o", "n");
+	ModelLog log6 = ModelLog.newChangeLog(ID.newID("table2"), "k", "o", "n");
 	expected.addAll(Arrays.asList(log1, log2, log3, log4, log5, log6));
 
 	ModelLogger logger = new DefaultModelLogger();
@@ -83,18 +83,18 @@ class ModelLoggerDefaultTest {
     @Test
     void getLogsPartialLogs() throws InterruptedException {
 	Set<ModelLog> expected = new HashSet<>();
-	ModelLog log1 = ModelLog.newCreateLog(ID.newID("table1", ID.Type.Template));
-	ModelLog log2 = ModelLog.newCreateLog(ID.newID("table2", ID.Type.Template));
+	ModelLog log1 = ModelLog.newCreateLog(ID.newID("table1"));
+	ModelLog log2 = ModelLog.newCreateLog(ID.newID("table2"));
 	Thread.sleep(5);
 	long queryLow = System.currentTimeMillis();
 	Thread.sleep(5);
-	ModelLog log3 = ModelLog.newDeleteLog(ID.newID("table1", ID.Type.Template));
-	ModelLog log4 = ModelLog.newDeleteLog(ID.newID("table2", ID.Type.Template));
-	ModelLog log5 = ModelLog.newChangeLog(ID.newID("table1", ID.Type.Template), "k", "o", "n");
+	ModelLog log3 = ModelLog.newDeleteLog(ID.newID("table1"));
+	ModelLog log4 = ModelLog.newDeleteLog(ID.newID("table2"));
+	ModelLog log5 = ModelLog.newChangeLog(ID.newID("table1"), "k", "o", "n");
 	Thread.sleep(5);
 	long queryHigh = System.currentTimeMillis();
 	Thread.sleep(5);
-	ModelLog log6 = ModelLog.newChangeLog(ID.newID("table2", ID.Type.Template), "k", "o", "n");
+	ModelLog log6 = ModelLog.newChangeLog(ID.newID("table2"), "k", "o", "n");
 	expected.addAll(Arrays.asList(log3, log4, log5));
 
 	ModelLogger logger = new DefaultModelLogger();

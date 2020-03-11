@@ -8,16 +8,4 @@ interface AtomResolver extends Function<ID, Atom> {
 
     Template0 getTemplate(ID id);
 
-    @Override
-    default Atom apply(ID id) {
-	switch (id.getType()) {
-	case Template:
-	    return getTemplate(id);
-	case Instance:
-	    return getInstance(id);
-	default:
-	    return null;
-	}
-    }
-
 }

@@ -40,6 +40,11 @@ class AtomConstructorPOJOWithInternalResolver extends POJOAtomConstructor {
 	    return (Template0) atoms.get(id);
 	}
 
+	@Override
+	public Atom apply(ID id) {
+	    return atoms.get(id);
+	}
+
     }
 
 }

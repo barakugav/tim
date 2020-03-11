@@ -3,19 +3,13 @@ package com.barakugav.tim;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 
 public final class ID implements Serializable {
 
-    public static enum Type {
-	Template, Instance
-    }
-
     private final String tableName;
-    private final Type type;
     private final byte[] data;
     private transient int hash;
 
@@ -23,19 +17,14 @@ public final class ID implements Serializable {
     private static final int DATA_LENGTH = 16;
     private static final String SEPARATOR = ".";
 
-    private ID(String tableName, Type type, byte[] data) {
+    private ID(String tableName, byte[] data) {
 	this.tableName = Objects.requireNonNull(tableName);
-	this.type = Objects.requireNonNull(type);
 	this.data = data.clone();
 	computeHashCode();
     }
 
     public String getTableName() {
 	return tableName;
-    }
-
-    public Type getType() {
-	return type;
     }
 
     @Override
@@ -56,7 +45,7 @@ public final class ID implements Serializable {
 
     @Override
     public String toString() {
-	return tableName + SEPARATOR + type.name() + SEPARATOR + bytesToHexString(data);
+	return tableName + SEPARATOR + bytesToHexString(data);
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -65,29 +54,23 @@ public final class ID implements Serializable {
     }
 
     private void computeHashCode() {
-	hash = Arrays.hashCode(data) ^ Objects.hashCode(tableName) ^ type.hashCode();
+	hash = Arrays.hashCode(data) ^ Objects.hashCode(tableName);
     }
 
-    public static ID newID(String tableName, Type type) {
+    public static ID newID(String tableName) {
 	byte[] b = new byte[DATA_LENGTH];
 	rand.nextBytes(b);
-	return new ID(tableName, type, b);
+	return new ID(tableName, b);
     }
 
-    public static ID valueOf(String s) throws ParseException {
-	try {
-	    String[] st = s.split("\\" + SEPARATOR);
-	    if (st.length != 3)
-		throw new ParseException(s, 0);
-	    String tableName = st[0];
-	    String typeStr = st[1];
-	    Type type = Type.valueOf(typeStr);
-	    String dataStr = st[2];
-	    byte[] data = hexStringToBytes(dataStr);
-	    return new ID(tableName, type, data);
-	} catch (IllegalArgumentException e) {
-	    throw new ParseException(e.getMessage(), 0);
-	}
+    public static ID valueOf(String s) {
+	String[] st = s.split("\\" + SEPARATOR);
+	if (st.length != 2)
+	    throw new IllegalArgumentException(s);
+	String tableName = st[0];
+	String dataStr = st[1];
+	byte[] data = hexStringToBytes(dataStr);
+	return new ID(tableName, data);
     }
 
     private static String bytesToHexString(byte[] bytes) {
@@ -101,10 +84,10 @@ public final class ID implements Serializable {
 	return new String(hexChars);
     }
 
-    private static byte[] hexStringToBytes(String s) throws ParseException {
+    private static byte[] hexStringToBytes(String s) {
 	int len = s.length();
 	if (len % 2 != 0)
-	    throw new ParseException("invalid length", 0);
+	    throw new IllegalArgumentException("invalid length");
 	byte[] bytes = new byte[len / 2];
 	for (int i = 0; i < len; i += 2)
 	    bytes[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));

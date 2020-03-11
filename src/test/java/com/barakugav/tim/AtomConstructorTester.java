@@ -7,16 +7,16 @@ import java.util.function.Consumer;
 class AtomConstructorTester {
 
     static void createTemplate(AtomConstructor c) {
-	assertNotNull(c.newTemplate(ID.newID("table1", ID.Type.Template)));
+	assertNotNull(c.newTemplate(ID.newID("table1")));
     }
 
     static void createInstance(AtomConstructor c) {
-	assertNotNull(c.newInstance(ID.newID("table1", ID.Type.Instance)));
+	assertNotNull(c.newInstance(ID.newID("table1")));
     }
 
     static void getId(AtomConstructor c) {
-	ID templateID = ID.newID("table1", ID.Type.Template);
-	ID instanceID = ID.newID("table1", ID.Type.Instance);
+	ID templateID = ID.newID("table1");
+	ID instanceID = ID.newID("table1");
 	Template template = c.newTemplate(templateID);
 	Instance instance = c.newInstance(instanceID);
 	AtomTester.getId(template, templateID);
@@ -24,14 +24,14 @@ class AtomConstructorTester {
     }
 
     static void getTemplate(AtomConstructor c) {
-	ID instanceID = ID.newID("table1", ID.Type.Instance);
+	ID instanceID = ID.newID("table1");
 	Instance instance = c.newInstance(instanceID);
 	AtomTester.getTemplate(instance, null);
     }
 
     static void setTemplate(AtomConstructor c) {
-	ID templateID = ID.newID("table1", ID.Type.Template);
-	ID instanceID = ID.newID("table1", ID.Type.Instance);
+	ID templateID = ID.newID("table1");
+	ID instanceID = ID.newID("table1");
 	Template0 template = c.newTemplate(templateID);
 	Instance0 instance = c.newInstance(instanceID);
 	AtomTester.setTemplate(instance, template);
@@ -144,12 +144,12 @@ class AtomConstructorTester {
     }
 
     private static Template newTemplate(AtomConstructor c) {
-	return c.newTemplate(ID.newID("table1", ID.Type.Template));
+	return c.newTemplate(ID.newID("table1"));
     }
 
     private static Instance newInstance(AtomConstructor c) {
-	Template0 instanceTemplate = c.newTemplate(ID.newID("table2", ID.Type.Template));
-	Instance0 instance = c.newInstance(ID.newID("table2", ID.Type.Instance));
+	Template0 instanceTemplate = c.newTemplate(ID.newID("table2"));
+	Instance0 instance = c.newInstance(ID.newID("table2"));
 	instance.setTemplate(instanceTemplate.getID());
 	instanceTemplate.addInstance(instance.getID());
 	return instance;
