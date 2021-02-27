@@ -137,7 +137,9 @@ class TIMXML extends TIMInMem {
 	transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 	transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 	DOMSource domSource = new DOMSource(doc);
-	StreamResult streamResult = new StreamResult(new File(filePath));
+	File outFile = new File(filePath);
+	outFile.getParentFile().mkdirs();
+	StreamResult streamResult = new StreamResult(outFile);
 	transformer.transform(domSource, streamResult);
 
 	// TODO - compact xml tags
